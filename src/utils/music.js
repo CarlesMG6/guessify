@@ -35,7 +35,7 @@ export function formatDuration(ms) {
 export function getBestImage(images) {
   if (!images || images.length === 0) return null
   
-  // Buscar imagen de 640x640 o la más grande disponible
-  const preferredImage = images.find(img => img.width === 640) || images[0]
+  // Buscar imagen de 300x300, si no existe, la primera disponible
+  const preferredImage = images.find(img => img.width === 300) || images[0]
   return preferredImage.url
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Play, Pause } from 'lucide-react'
+import { Play, Pause, Ban } from 'lucide-react'
 import { getBestImage } from '../utils/music'
 
 export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
@@ -10,8 +10,11 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
   
   const isCurrentlyPlaying = isPlaying && currentTrackId === track.id
   const imageUrl = getBestImage(track.album.images)
+  const hasPreview = !!track.preview_url
   
   const handlePlayClick = () => {
+    if (!hasPreview) return // No hacer nada si no hay preview
+    
     if (isCurrentlyPlaying) {
       onPlay(null) // Pausar
     } else {
@@ -20,7 +23,7 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
   }
 
   return (
-    <div className="card-song group cursor-pointer" onClick={handlePlayClick}>
+    <div className={`card-song group ${hasPreview ? 'cursor-pointer' : 'cursor-default opacity-75'}`} onClick={handlePlayClick}>
       {/* Imagen del album */}
       <div className="relative aspect-square mb-3 overflow-hidden rounded-lg">
         {imageUrl && !imageError ? (
@@ -28,6 +31,7 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
             src={imageUrl}
             alt={`Portada de ${track.name}`}
             fill
+            sizes="(max-width: 768px) 100vw, 300px"
             className="object-cover group-hover:scale-110 transition-transform duration-300"
             onError={() => setImageError(true)}
           />
@@ -37,16 +41,24 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
           </div>
         )}
         
-        {/* Overlay con botón de play */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
-          <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-500 rounded-full p-3 hover:bg-green-600 hover:scale-110 transform">
-            {isCurrentlyPlaying ? (
-              <Pause className="w-6 h-6 text-white" />
-            ) : (
-              <Play className="w-6 h-6 text-white ml-0.5" />
-            )}
-          </button>
+        {/* Overlay con botón de play o indicador sin preview */}
+        {/*
+        <div className={`absolute inset-0 bg-black bg-opacity-0 ${hasPreview ? 'group-hover:bg-opacity-50' : 'bg-opacity-20'} transition-all duration-200 flex items-center justify-center`}>
+          {hasPreview ? (
+            <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-500 rounded-full p-3 hover:bg-green-600 hover:scale-110 transform">
+              {isCurrentlyPlaying ? (
+                <Pause className="w-6 h-6 text-white" />
+              ) : (
+                <Play className="w-6 h-6 text-white ml-0.5" />
+              )}
+            </button>
+          ) : (
+            <div className="opacity-50 bg-gray-600 rounded-full p-3">
+              <Ban className="w-6 h-6 text-gray-300" />
+            </div>
+          )}
         </div>
+        */}
       </div>
 
       {/* Información de la canción */}
@@ -60,10 +72,17 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
         <p className="text-gray-500 text-xs">
           {track.album.name}
         </p>
+        
+        {/* Indicador de preview disponible */}
+        {!hasPreview && (
+          <p className="text-orange-400 text-xs italic">
+            Sin preview disponible
+          </p>
+        )}
       </div>
 
       {/* Indicador de reproducción */}
-      {isCurrentlyPlaying && (
+      {isCurrentlyPlaying && hasPreview && (
         <div className="flex items-center gap-1 mt-2">
           <div className="w-1 h-1 bg-green-500 rounded-full animate-bounce"></div>
           <div className="w-1 h-1 bg-green-500 rounded-full animate-bounce delay-100"></div>
