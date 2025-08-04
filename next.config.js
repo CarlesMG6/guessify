@@ -1,14 +1,38 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    domains: ['i.scdn.co', 'mosaic.scdn.co'],
+  experimental: {
+    // Disable experimental features that might cause issues
+    ppr: false,
   },
-  env: {
-    SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
-    SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-  }
+  images: {
+    domains: ['i.scdn.co', 'via.placeholder.com'],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Fix for undici module in client-side builds
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+      };
+    }
+    
+    // Ignore undici in client builds
+    config.externals = config.externals || [];
+    config.externals.push('undici');
+    
+    return config;
+  },
 }
 
 module.exports = nextConfig
