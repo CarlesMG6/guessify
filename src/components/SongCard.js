@@ -4,26 +4,51 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Play, Pause, Ban } from 'lucide-react'
 import { getBestImage } from '../utils/music'
+import { useSpotifyPlayer } from '../hooks/useSpotifyPlayer'
+import { useSpotifyPlayerContext } from '../contexts/SpotifyPlayerContext'
 
-export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
+export default function SongCard({ track }) {
   const [imageError, setImageError] = useState(false)
+  const { isReady: contextReady, sdkAvailable } = useSpotifyPlayerContext()
+  const { togglePlayback, currentTrack, isPlaying } = useSpotifyPlayer()
   
-  const isCurrentlyPlaying = isPlaying && currentTrackId === track.id
+  const isSpotifyPlaying = isPlaying && currentTrack?.id === track.id
   const imageUrl = getBestImage(track.album.images)
-  const hasPreview = !!track.preview_url
+  const canPlay = contextReady && sdkAvailable // Solo puede reproducir si SDK está disponible
   
+  console.log('SongCard render:', {
+    trackName: track.name,
+    trackUri: track.uri,
+    contextReady,
+    sdkAvailable,
+    canPlay
+  })
+
   const handlePlayClick = () => {
-    if (!hasPreview) return // No hacer nada si no hay preview
+    console.log('SongCard play clicked:', {
+      trackName: track.name,
+      trackUri: track.uri,
+      canPlay,
+      contextReady,
+      sdkAvailable
+    })
     
-    if (isCurrentlyPlaying) {
-      onPlay(null) // Pausar
+    if (!canPlay) {
+      console.log('Cannot play - SDK not available')
+      return
+    }
+    
+    // Solo usar SDK de Spotify - no fallback
+    if (contextReady && sdkAvailable && track.uri) {
+      console.log('Using Spotify SDK for full track playback')
+      togglePlayback(track.uri)
     } else {
-      onPlay(track) // Reproducir
+      console.log('No playback option available - Premium required')
     }
   }
 
   return (
-    <div className={`card-song group ${hasPreview ? 'cursor-pointer' : 'cursor-default opacity-75'}`} onClick={handlePlayClick}>
+    <div className={`card-song group ${canPlay ? 'cursor-pointer' : 'cursor-default opacity-75'}`} onClick={handlePlayClick}>
       {/* Imagen del album */}
       <div className="relative aspect-square mb-3 overflow-hidden rounded-lg">
         {imageUrl && !imageError ? (
@@ -41,12 +66,11 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
           </div>
         )}
         
-        {/* Overlay con botón de play o indicador sin preview */}
-        {/*
-        <div className={`absolute inset-0 bg-black bg-opacity-0 ${hasPreview ? 'group-hover:bg-opacity-50' : 'bg-opacity-20'} transition-all duration-200 flex items-center justify-center`}>
-          {hasPreview ? (
+        {/* Overlay con botón de play */}
+        <div className={`absolute inset-0 bg-opacity-0 ${canPlay ? 'group-hover:bg-opacity-50' : 'bg-opacity-20'} transition-all duration-200 flex items-center justify-center`}>
+          {canPlay ? (
             <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-500 rounded-full p-3 hover:bg-green-600 hover:scale-110 transform">
-              {isCurrentlyPlaying ? (
+              {isSpotifyPlaying ? (
                 <Pause className="w-6 h-6 text-white" />
               ) : (
                 <Play className="w-6 h-6 text-white ml-0.5" />
@@ -58,7 +82,6 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
             </div>
           )}
         </div>
-        */}
       </div>
 
       {/* Información de la canción */}
@@ -73,16 +96,10 @@ export default function SongCard({ track, onPlay, isPlaying, currentTrackId }) {
           {track.album.name}
         </p>
         
-        {/* Indicador de preview disponible */}
-        {!hasPreview && (
-          <p className="text-orange-400 text-xs italic">
-            Sin preview disponible
-          </p>
-        )}
       </div>
 
       {/* Indicador de reproducción */}
-      {isCurrentlyPlaying && hasPreview && (
+      {isSpotifyPlaying && (
         <div className="flex items-center gap-1 mt-2">
           <div className="w-1 h-1 bg-green-500 rounded-full animate-bounce"></div>
           <div className="w-1 h-1 bg-green-500 rounded-full animate-bounce delay-100"></div>

@@ -4,7 +4,7 @@
 
 Guessify es una aplicación web social construída con Next.js y Tailwind CSS v4, que sincroniza una cuenta de Spotify de un usuario para crear un juego de adivinanzas basado en sus hábitos de escucha. En la primera fase (MVP), se implementará únicamente el login con Spotify y la obtención de las 50 canciones más escuchadas del usuario en los últimos 6 meses. A partir de ahí se generará una lista aleatoria de esos temas.
 
-La interfaz mostrará el nombre de la canción, la portada y reproducirá un fragmento de 30 segundos (`preview_url`). Más adelante, añadirán múltiples usuarios en una sala y mezclarán su top 50 para el juego social.
+La interfaz mostrará el nombre de la canción, la portada y reproducirá la canción. Más adelante, añadirán múltiples usuarios en una sala y mezclarán su top 50 para el juego social.
 
 ---
 
@@ -15,7 +15,6 @@ La interfaz mostrará el nombre de la canción, la portada y reproducirá un fra
 
   * Probar flujo de OAuth con Spotify en Next.js.
   * Verificar rendimiento de llamadas a la API (top 50 tracks).
-  * Mostrar previews de canciones en la interfaz.
 
 ---
 
@@ -62,7 +61,6 @@ La interfaz mostrará el nombre de la canción, la portada y reproducirá un fra
   * Nombre de la canción
   * Artista
   * Portada (`album.images`)
-* Reproducir preview de 30 s usando la URL `preview_url`.
 
 ---
 
@@ -90,7 +88,7 @@ La interfaz mostrará el nombre de la canción, la portada y reproducirá un fra
    * Login con Spotify en Next.js
    * Fetch top 50 tracks últimos 6 meses
    * Generar lista aleatoria
-   * Mostrar nombre, portada y preview 30 s
+   * Mostrar nombre, portada
 2. **MVP 2:**
 
    * Permitir múltiples usuarios en una sala
@@ -138,14 +136,7 @@ La interfaz mostrará el nombre de la canción, la portada y reproducirá un fra
 
        * Portada en cuadro 1:1 con borde redondeado.
        * Nombre de la canción y artista debajo.
-       * Botón “Play Preview” (icono de play integrado en la tarjeta).
    * **Control centrado:** Botón flotante para regenerar lista (ícono refresh).
-
-3. **Reproducción de Preview**
-
-   * Sobreposición modal o player fijo en el footer:
-
-     * Carátula pequeña, nombre de la canción y controles básicos (play/pause, barra de progreso con 30 s).
 
 4. **Responsividad y estado móvil**
 

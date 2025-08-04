@@ -40,7 +40,7 @@ export default function Home() {
           </h2>
           <p className="text-gray-400">
             Conecta tu cuenta de Spotify y juega con tus canciones más escuchadas.
-            Escucha previews de 30 segundos y adivina de qué canción se trata.
+            Escucha unos segundos y adivina de qué canción se trata.
           </p>
         </div>
 

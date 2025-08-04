@@ -7,7 +7,7 @@ import { getBestImage } from '../utils/music'
 
 export default function AudioPlayer({ track, isPlaying, onPlayPause, onClose }) {
   const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(30) // 30 segundos para previews
+  const [duration, setDuration] = useState(30) 
   const audioRef = useRef(null)
 
   useEffect(() => {
@@ -49,7 +49,6 @@ export default function AudioPlayer({ track, isPlaying, onPlayPause, onClose }) 
     <div className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 p-4 z-50">
       <audio
         ref={audioRef}
-        src={track.preview_url}
         preload="metadata"
       />
       

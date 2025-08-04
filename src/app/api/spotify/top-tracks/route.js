@@ -6,30 +6,19 @@ export async function GET() {
   console.log('=== TOP TRACKS API CALLED ===')
   try {
     const session = await getServerSession(authOptions)
-    console.log('Session check:', { 
-      hasSession: !!session, 
-      hasAccessToken: !!session?.accessToken,
-      tokenPrefix: session?.accessToken?.substring(0, 10) + '...'
-    })
     
     if (!session || !session.accessToken) {
       console.log('No session or access token found:', { session: !!session, accessToken: !!session?.accessToken })
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    console.log('Making request to Spotify API...')
     const spotifyUrl = 'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=medium_term'
-    console.log('Spotify URL:', spotifyUrl)
-    
     const response = await fetch(spotifyUrl, {
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,
         'Content-Type': 'application/json',
       },
     })
-
-    console.log('Spotify API response status:', response.status, response.statusText)
-    console.log('Spotify API response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -44,15 +33,8 @@ export async function GET() {
     }
 
     const data = await response.json()
-    console.log('Spotify API full response:', JSON.stringify(data, null, 2))
-    console.log('Spotify API response summary:', { 
-      totalItems: data.items?.length, 
-      hasItems: !!data.items,
-      dataKeys: Object.keys(data)
-    })
     
     if (!data.items || data.items.length === 0) {
-      console.log('No items found in Spotify response')
       return NextResponse.json({
         tracks: [],
         total: 0,
@@ -62,22 +44,14 @@ export async function GET() {
       })
     }
     
-    // Devolver todas las canciones, no solo las que tienen preview
+    // Devolver todas las canciones (para usar con Spotify SDK)
     const allTracks = data.items
-    const tracksWithPreviews = data.items.filter(track => track.preview_url)
-    console.log('Total tracks:', allTracks.length, 'Tracks with previews:', tracksWithPreviews.length)
     
     const result = {
-      tracks: allTracks, // Cambio: devolver todas las canciones
+      tracks: allTracks,
       total: allTracks.length,
-      totalWithPreviews: tracksWithPreviews.length
+      totalOriginal: data.items.length
     }
-    
-    console.log('Returning result:', { 
-      tracksCount: result.tracks.length, 
-      total: result.total, 
-      totalWithPreviews: result.totalWithPreviews
-    })
     
     return NextResponse.json(result)
     

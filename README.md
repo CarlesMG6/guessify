@@ -1,13 +1,13 @@
 # Guessify
 
-Guessify es una aplicación web construida con Next.js que se conecta con Spotify para crear un juego de adivinanzas basado en tu música favorita. Muestra tus 50 canciones más escuchadas de los últimos 6 meses y genera listas aleatorias para que puedas escuchar previews de 30 segundos.
+Guessify es una aplicación web construida con Next.js que se conecta con Spotify para crear un juego de adivinanzas basado en tu música favorita. Muestra tus 50 canciones más escuchadas de los últimos 6 meses y genera listas aleatorias para que puedas escuchar las canciones.
 
 ## 🚀 Características
 
 - **Autenticación con Spotify**: Login seguro usando OAuth 2.0
 - **Top Tracks**: Obtiene tus 50 canciones más escuchadas
 - **Lista Aleatoria**: Genera selecciones aleatorias de tus canciones favoritas
-- **Reproductor Integrado**: Escucha previews de 30 segundos
+- **Reproductor Integrado**: Escucha las canciones completas
 - **Diseño Responsivo**: Optimizado para móvil, tablet y escritorio
 - **UI Moderna**: Diseñado con Tailwind CSS v4
 
@@ -80,7 +80,7 @@ Guessify es una aplicación web construida con Next.js que se conecta con Spotif
 1. **Inicia sesión** con tu cuenta de Spotify
 2. **Autoriza** la aplicación para acceder a tu música
 3. **Explora** tu lista aleatoria generada
-4. **Reproduce** previews de 30 segundos haciendo clic en las canciones
+4. **Reproduce** canción simplemente haciendo click y usando el streaming del sdk de spotify
 5. **Genera** nuevas listas aleatorias con el botón de refresh
 
 ## 📁 Estructura del Proyecto
@@ -148,7 +148,6 @@ La aplicación es compatible con cualquier proveedor que soporte Next.js:
 - ✅ Login con Spotify
 - ✅ Obtener top 50 tracks
 - ✅ Lista aleatoria
-- ✅ Reproductor de previews
 
 ### MVP 2 (Próximamente)
 - 🔄 Múltiples usuarios en sala
@@ -196,7 +195,6 @@ Esta aplicación utiliza:
 
 ### Error: "No se encontraron canciones"
 - Asegúrate de tener historial de reproducción en Spotify
-- Algunos tracks pueden no tener preview disponible
 
 ### Error de CORS
 - Verifica que `NEXTAUTH_URL` esté configurado correctamente

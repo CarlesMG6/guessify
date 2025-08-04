@@ -6,20 +6,21 @@ import { useRouter } from 'next/navigation'
 import { RefreshCw, LogOut } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import SongCard from '../../components/SongCard'
-import AudioPlayer from '../../components/AudioPlayer'
+import SpotifyPlayer from '../../components/SpotifyPlayer'
 import Loader from '../../components/Loader'
 import ErrorMessage from '../../components/ErrorMessage'
 import { getRandomTracks } from '../../utils/music'
+import { useSpotifyPlayerContext } from '../../contexts/SpotifyPlayerContext'
 
 export default function Dashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { setPlaylist } = useSpotifyPlayerContext()
   const [topTracks, setTopTracks] = useState([])
   const [randomTracks, setRandomTracks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [currentTrack, setCurrentTrack] = useState(null)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [playlistGenerated, setPlaylistGenerated] = useState(false)
 
   // Redirigir si no hay sesión
   useEffect(() => {
@@ -30,10 +31,10 @@ export default function Dashboard() {
 
   // Cargar top tracks al montar el componente
   useEffect(() => {
-    if (session) {
+    if (session && !playlistGenerated) {
       fetchTopTracks()
     }
-  }, [session])
+  }, [session, playlistGenerated])
 
   const fetchTopTracks = async () => {
     try {
@@ -62,12 +63,16 @@ export default function Dashboard() {
       console.log('API Response data:', data)
       
       if (!data.tracks || data.tracks.length === 0) {
-        setError(`No se encontraron canciones. Total en Spotify: ${data.totalOriginal || 0}, Con preview: ${data.totalWithPreviews || 0}. Mensaje: ${data.message || 'Sin mensaje'}`)
+        setError(`No se encontraron canciones. Total en Spotify: ${data.totalOriginal || 0}. Mensaje: ${data.message || 'Sin mensaje'}`)
         return
       }
       
       setTopTracks(data.tracks)
-      generateRandomPlaylist(data.tracks)
+      // Solo generar la playlist inicial si no se ha generado antes
+      if (!playlistGenerated) {
+        generateRandomPlaylist(data.tracks)
+        setPlaylistGenerated(true)
+      }
       
     } catch (err) {
       console.error('Error fetching top tracks:', err)
@@ -78,30 +83,11 @@ export default function Dashboard() {
   }
 
   const generateRandomPlaylist = (tracks = topTracks) => {
-    const randomSelection = getRandomTracks(tracks, 12)
+    const randomSelection = getRandomTracks(tracks, 10)
     setRandomTracks(randomSelection)
-  }
-
-  const handlePlay = (track) => {
-    // Solo permitir reproducción si la canción tiene preview
-    if (!track || !track.preview_url) {
-      console.log('No se puede reproducir: canción sin preview')
-      return
-    }
-    
-    if (currentTrack?.id === track?.id) {
-      // Pausar/reanudar la misma canción
-      setIsPlaying(!isPlaying)
-    } else {
-      // Reproducir nueva canción
-      setCurrentTrack(track)
-      setIsPlaying(!!track)
-    }
-  }
-
-  const handleClosePlayer = () => {
-    setCurrentTrack(null)
-    setIsPlaying(false)
+    // Actualizar la playlist en el contexto para el reproductor de Spotify
+    setPlaylist(randomSelection)
+    console.log('📋 Nueva playlist generada:', randomSelection.length, 'canciones')
   }
 
   if (status === 'loading' || loading) {
@@ -127,11 +113,6 @@ export default function Dashboard() {
           <p className="text-gray-400 mb-2">
             Basada en tus {topTracks.length} canciones más escuchadas de los últimos 6 meses
           </p>
-          {topTracks.length > 0 && (
-            <p className="text-gray-500 text-sm mb-6">
-              {topTracks.filter(track => track.preview_url).length} canciones con preview disponible
-            </p>
-          )}
           
           <button
             onClick={() => generateRandomPlaylist()}
@@ -169,9 +150,6 @@ export default function Dashboard() {
               <SongCard
                 key={track.id}
                 track={track}
-                onPlay={handlePlay}
-                isPlaying={isPlaying}
-                currentTrackId={currentTrack?.id}
               />
             ))}
           </div>
@@ -194,13 +172,8 @@ export default function Dashboard() {
         )}
       </main>
 
-      {/* Audio Player */}
-      <AudioPlayer
-        track={currentTrack}
-        isPlaying={isPlaying}
-        onPlayPause={() => setIsPlaying(!isPlaying)}
-        onClose={handleClosePlayer}
-      />
+      {/* Spotify Web Playback SDK Player */}
+      <SpotifyPlayer className="fixed bottom-0 left-0 right-0 z-50" />
     </div>
   )
 }
