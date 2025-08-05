@@ -161,13 +161,18 @@ export default function RoomPage({ params }) {
   }
 
   // If game has started, show game interface
+  const handleBackToLobby = () => {
+    // This would require implementing a function to reset game state
+    router.push('/');
+  };
+
   if (role === 'host') {
     return (
       <GameHost 
         sala={sala}
         players={players}
-        user={user}
-        spotifyUser={spotifyUser}
+        config={sala.config}
+        onBackToLobby={handleBackToLobby}
       />
     );
   } else {
@@ -175,8 +180,7 @@ export default function RoomPage({ params }) {
       <GamePlayer 
         sala={sala}
         players={players}
-        user={user}
-        spotifyUser={spotifyUser}
+        onBackToLobby={handleBackToLobby}
       />
     );
   }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import GameHost from './GameHost';
+import GamePlayer from './GamePlayer';
 
 export default function CreateRoom() {
   const { user, spotifyUser } = useAuth();
@@ -18,7 +20,8 @@ export default function CreateRoom() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [view, setView] = useState('config'); // 'config' or 'lobby'
+  const [view, setView] = useState('config'); // 'config', 'lobby', 'game'
+  const [gameStarted, setGameStarted] = useState(false);
 
   // Memoize the subscription setup to avoid recreating it
   const setupSubscription = useCallback(async (salaId) => {
@@ -84,9 +87,20 @@ export default function CreateRoom() {
   };
 
   const handleStartGame = async () => {
-    // TODO: Implement game start logic
-    console.log('Starting game with config:', config);
-    console.log('Players:', players);
+    setLoading(true);
+    setError('');
+
+    try {
+      const { startGame } = await import('../lib/firestore');
+      await startGame(sala.id, config);
+      setGameStarted(true);
+      setView('game');
+    } catch (error) {
+      console.error('Error starting game:', error);
+      setError('Error al iniciar el juego. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -96,12 +110,41 @@ export default function CreateRoom() {
     }));
   };
 
+  const handleBackToLobby = () => {
+    setGameStarted(false);
+    setView('lobby');
+  };
+
   const getJoinUrl = () => {
     if (typeof window !== 'undefined' && sala) {
       return `${window.location.origin}/?join=${sala.id}`;
     }
     return '';
   };
+
+  // Game view - check if user is host or player
+  if (view === 'game' && sala && gameStarted) {
+    const isHost = sala.hostUserId === user?.uid;
+    
+    if (isHost) {
+      return (
+        <GameHost
+          sala={sala}
+          players={players}
+          config={config}
+          onBackToLobby={handleBackToLobby}
+        />
+      );
+    } else {
+      return (
+        <GamePlayer
+          sala={sala}
+          players={players}
+          onBackToLobby={handleBackToLobby}
+        />
+      );
+    }
+  }
 
   if (view === 'lobby' && sala) {
     return (
@@ -158,9 +201,10 @@ export default function CreateRoom() {
               {players.length >= 2 && (
                 <button
                   onClick={handleStartGame}
-                  className="w-full mt-6 bg-spotify-green hover:bg-green-600 text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                  disabled={loading}
+                  className="w-full mt-6 bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
                 >
-                  Empezar Partida
+                  {loading ? 'Iniciando juego...' : 'Empezar Partida'}
                 </button>
               )}
               {players.length < 2 && (

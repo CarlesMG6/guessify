@@ -70,9 +70,11 @@ export async function GET(request) {
       topTracks[result.timeRange] = result.tracks.map(track => ({
         id: track.id,
         name: track.name,
-        artists: track.artists.map(artist => artist.name),
-        album: track.album.name,
-        coverUrl: track.album.images[0]?.url,
+        artists: track.artists,
+        album: {
+          name: track.album.name,
+          images: track.album.images
+        },
         preview_url: track.preview_url,
         external_urls: track.external_urls
       }));
