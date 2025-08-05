@@ -135,7 +135,24 @@ export const AuthProvider = ({ children }) => {
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       
-      await signInAnonymously(auth);
+      const result = await signInAnonymously(auth);
+      
+      // Crear el documento del usuario anónimo en Firestore
+      if (result.user) {
+        try {
+          const { createUser } = await import('../lib/firestore');
+          await createUser({
+            id: result.user.uid,
+            isAnonymous: true,
+            nombre: `Usuario${result.user.uid.slice(-6)}`, // Nombre temporal
+            email: null,
+            spotifyId: null
+          });
+        } catch (error) {
+          // Si falla la creación, no es crítico para el login anónimo
+          console.log('Error creating anonymous user document (not critical):', error);
+        }
+      }
     } catch (error) {
       console.error('Error signing in anonymously:', error);
       throw error;
