@@ -93,12 +93,21 @@ export const useSpotifyPlayer = (spotifyToken) => {
 
   // Play a track by Spotify URI
   const playTrack = useCallback(async (trackUri) => {
+    console.log('🎵 playTrack called with:', {
+      trackUri,
+      deviceId,
+      hasToken: !!spotifyToken,
+      isReady
+    });
+
     if (!deviceId || !spotifyToken) {
+      console.error('❌ Missing requirements:', { deviceId, hasToken: !!spotifyToken });
       setError('Reproductor no disponible');
       return false;
     }
 
     try {
+      console.log('🌐 Making Spotify API call...');
       const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: 'PUT',
         headers: {
@@ -111,17 +120,32 @@ export const useSpotifyPlayer = (spotifyToken) => {
         })
       });
 
+      console.log('📡 Spotify API response:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
+      });
+
       if (response.ok) {
+        console.log('✅ Track playing successfully');
         setError(null);
         return true;
       } else {
         const errorData = await response.json();
-        console.error('Error playing track:', errorData);
-        setError('Error reproduciendo canción. Verifica que tengas Spotify Premium');
+        console.error('❌ Spotify API error:', errorData);
+        
+        // Better error messages based on status
+        if (response.status === 403) {
+          setError('Necesitas Spotify Premium para reproducir canciones completas');
+        } else if (response.status === 404) {
+          setError('Dispositivo de reproducción no encontrado. Abre Spotify en tu dispositivo');
+        } else {
+          setError('Error reproduciendo canción. Verifica que tengas Spotify Premium');
+        }
         return false;
       }
     } catch (error) {
-      console.error('Error playing track:', error);
+      console.error('❌ Network error playing track:', error);
       setError('Error de conexión con Spotify');
       return false;
     }
