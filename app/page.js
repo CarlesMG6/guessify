@@ -11,6 +11,9 @@ import ClientOnly from '../components/ClientOnly';
 export default function Home() {
   const { user, spotifyUser, loading, loginAnonymously, isClient } = useAuth();
   const [view, setView] = useState('home'); // 'home', 'create', 'join'
+  const [roomPin, setRoomPin] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     // Auto-login anonymously if no user and client is ready
@@ -22,7 +25,7 @@ export default function Home() {
     if (isClient && typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const joinCode = urlParams.get('join');
-      
+
       if (joinCode && spotifyUser) {
         setView('join');
         // You could pre-fill the room code here if you modify JoinRoom to accept it
@@ -35,6 +38,29 @@ export default function Home() {
     window.location.href = authUrl;
   };
 
+  const handleJoinRoom = async (e) => {
+    e.preventDefault();
+
+    if (!roomPin.trim()) {
+      setError('Por favor, introduce el PIN de la sala');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // TODO: Implementar lógica para unirse a la sala
+      // Por ahora simulamos la navegación
+      router.push(`/room/${roomPin}`);
+    } catch (error) {
+      console.error('Error joining room:', error);
+      setError('Error al unirse a la sala. Verifica el PIN e intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isClient || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
@@ -44,9 +70,79 @@ export default function Home() {
   }
 
   return (
+    <div className="min-h-screen w-full bg-gradient-to-br flex from-spotify-dark via-spotify-gray to-black">
+      <div className="w-10/12 md:w-full max-w-lg mx-auto my-auto flex flex-col items-center justify-center">
+        <h1 className="text-6xl font-bold text-spotify-green">Guessify</h1>
+        {/* Join Form */}
+        <div className="w-full md:w-96 bg-spotify-gray rounded-2xl p-6 sm:p-8 shadow-2xl mt-8">
+          <form onSubmit={handleJoinRoom} className="space-y-6">
+            {/* Room PIN Input */}
+            <div>
+              {/*<label 
+                  htmlFor="roomPin" 
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
+                  PIN de la Sala
+                </label>*/}
+              <input
+                id="roomPin"
+                type="text"
+                value={roomPin}
+                onChange={(e) => setRoomPin(e.target.value.toUpperCase())}
+                placeholder="Introduce el PIN"
+                className="w-full px-4 py-3 bg-spotify-light-gray rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-spotify-green focus:border-transparent text-center text-lg font-mono tracking-wider"
+                maxLength={6}
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-900/50 border border-red-700 rounded-lg p-3">
+                <p className="text-red-400 text-sm text-center">{error}</p>
+              </div>
+            )}
+
+            {/* Join Button */}
+            <button
+              type="submit"
+              className="w-full bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-lg"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5"></div>
+                  <span>Entrando...</span>
+                </div>
+              ) : (
+                'Entrar'
+              )}
+            </button>
+          </form>
+        </div>
+            {/* Join Button */}
+
+            <h1 className="mt-16 text-gray-300">O bien crea una nueva partida</h1>
+            <button
+              type="submit"
+              className="mt-4 w-80 bg-white text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-lg"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5"></div>
+                  <span>Entrando...</span>
+                </div>
+              ) : (
+                'Crear Partida'
+              )}
+            </button>
+      </div>
+    </div>
+  );
+}
+
+/*
     <ClientOnly>
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black">
-        {/* Header */}
         <header className="p-6 border-b border-gray-700">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
             <h1 className="text-3xl font-bold text-spotify-green">🎵 Guessify</h1>
@@ -147,5 +243,4 @@ export default function Home() {
         </main>
       </div>
     </ClientOnly>
-  );
-}
+*/

@@ -11,6 +11,7 @@ module.exports = {
         'spotify-green': '#1DB954',
         'spotify-dark': '#191414',
         'spotify-gray': '#282828',
+        'spotify-light-gray': '#3F3F3F',
       },
       animation: {
         'spin-slow': 'spin 3s linear infinite',
