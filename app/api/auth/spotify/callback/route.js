@@ -112,7 +112,7 @@ export async function GET(request) {
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #1db954, #191414);
+            background: rgb(0, 0, 0);
             color: white;
         }
         .container {
@@ -139,9 +139,7 @@ export async function GET(request) {
 </head>
 <body>
     <div class="container">
-        <h2>¡Autenticación exitosa!</h2>
         <div class="spinner"></div>
-        <p>Redirigiendo...</p>
     </div>
     
     <script>
@@ -150,9 +148,15 @@ export async function GET(request) {
         localStorage.setItem('spotify_user_data', JSON.stringify(userData));
         localStorage.setItem('spotify_auth_success', 'true');
         
-        // Redirect to main page
+        // Get redirect URL from localStorage or default to main page
+        const redirectUrl = localStorage.getItem('spotify_redirect_after_auth') || '/';
+        
+        // Clear the redirect URL from localStorage
+        localStorage.removeItem('spotify_redirect_after_auth');
+        
+        // Redirect to the stored URL or main page
         setTimeout(() => {
-            window.location.href = '/';
+            window.location.href = redirectUrl;
         }, 1500);
     </script>
 </body>

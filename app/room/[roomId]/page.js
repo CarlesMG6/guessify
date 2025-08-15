@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { 
-  getSala, 
-  subscribeToSalaUpdates, 
+  getRoom, 
+  subscribeToRoomUpdates, 
   subscribeToPlayersUpdates,
-  updateSala 
+  updateRoom 
 } from '../../../lib/firestore';
+import { getSpotifyAuthUrl } from '../../../lib/spotify';
 import RoomLobby from '../../../components/RoomLobby';
 import GameHost from '../../../components/GameHost';
 import GamePlayer from '../../../components/GamePlayer';
@@ -17,11 +18,12 @@ export default function RoomPage({ params }) {
   const { roomId } = params;
   const { user, spotifyUser } = useAuth();
   const router = useRouter();
-  const [sala, setSala] = useState(null);
+  const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [role, setRole] = useState('player'); // 'host' or 'player'
+  const [showSpotifyModal, setShowSpotifyModal] = useState(false);
 
   useEffect(() => {
     // Get role from URL params
@@ -32,19 +34,28 @@ export default function RoomPage({ params }) {
     }
   }, []);
 
+  // Check if user needs Spotify login
+  useEffect(() => {
+    if (user && !spotifyUser && !loading) {
+      setShowSpotifyModal(true);
+    } else {
+      setShowSpotifyModal(false);
+    }
+  }, [user, spotifyUser, loading]);
+
   useEffect(() => {
     if (!user || !roomId) return;
 
     const loadRoom = async () => {
       try {
-        const roomData = await getSala(roomId);
+        const roomData = await getRoom(roomId);
         
         if (!roomData) {
-          setError('La sala no existe');
+          setError('La room no existe');
           return;
         }
 
-        setSala(roomData);
+        setRoom(roomData);
         
         // Set role based on host
         if (roomData.hostUserId === user.uid) {
@@ -53,7 +64,7 @@ export default function RoomPage({ params }) {
         
       } catch (error) {
         console.error('Error loading room:', error);
-        setError('Error al cargar la sala');
+        setError('Error al cargar la room');
       } finally {
         setLoading(false);
       }
@@ -70,11 +81,11 @@ export default function RoomPage({ params }) {
     const setupSubscriptions = async () => {
       try {
         // Subscribe to room updates
-        unsubscribeRoom = await subscribeToSalaUpdates(roomId, (doc) => {
+        unsubscribeRoom = await subscribeToRoomUpdates(roomId, (doc) => {
           if (doc.exists()) {
-            setSala({ id: doc.id, ...doc.data() });
+            setRoom({ id: doc.id, ...doc.data() });
           } else {
-            setError('La sala no existe');
+            setError('La room no existe');
           }
         });
 
@@ -88,7 +99,7 @@ export default function RoomPage({ params }) {
         });
       } catch (error) {
         console.error('Error setting up subscriptions:', error);
-        setError('Error al conectar con la sala');
+        setError('Error al conectar con la room');
       }
     };
 
@@ -100,11 +111,20 @@ export default function RoomPage({ params }) {
     };
   }, [roomId]);
 
+  const handleSpotifyLogin = () => {
+    // Store current URL in localStorage for redirect after auth
+    const currentUrl = window.location.href;
+    localStorage.setItem('spotify_redirect_after_auth', currentUrl);
+    
+    const authUrl = getSpotifyAuthUrl();
+    window.location.href = authUrl;
+  };
+
   const startGame = async () => {
-    if (role !== 'host' || !sala) return;
+    if (role !== 'host' || !room) return;
 
     try {
-      await updateSala(roomId, {
+      await updateRoom(roomId, {
         'state.started': true,
         'state.currentRound': 0
       });
@@ -114,10 +134,46 @@ export default function RoomPage({ params }) {
     }
   };
 
+  // Spotify Login Modal
+  const SpotifyLoginModal = () => {
+    if (!showSpotifyModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-spotify-dark rounded-xl p-6 max-w-md w-full mx-4 border border-spotify-gray">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-spotify-green rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 17.568c-.226.358-.706.472-1.064.246-2.912-1.778-6.571-2.18-10.888-1.193-.404.093-.818-.135-.911-.539s.135-.818.539-.911c4.751-1.084 8.858-.621 12.078 1.373.358.226.472.706.246 1.064zm1.514-3.37c-.286.453-.895.596-1.348.31-3.335-2.051-8.414-2.645-12.36-1.447-.514.156-1.057-.132-1.213-.646s.132-1.057.646-1.213c4.528-1.375 10.104-.787 13.965 1.646.453.286.596.895.31 1.35zm.131-3.508C15.684 8.445 9.139 8.242 5.315 9.375c-.608.181-1.25-.165-1.431-.773s.165-1.25.773-1.431c4.415-1.304 11.731-1.057 16.511 1.82.548.33.729 1.043.398 1.591-.33.548-1.043.729-1.591.398z"/>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Conecta con Spotify</h2>
+            <p className="text-gray-300 mb-6">
+              Para participar en el juego necesitas conectar tu cuenta de Spotify. 
+              Esto nos permite acceder a tus gustos musicales y crear un juego personalizado.
+            </p>
+            <button
+              onClick={handleSpotifyLogin}
+              className="w-full bg-spotify-green hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 mb-3"
+            >
+              Conectar con Spotify
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full bg-transparent border border-gray-500 hover:border-gray-400 text-gray-300 hover:text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+            >
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
-        <div className="text-white text-xl">Cargando sala...</div>
+        <div className="text-white text-xl">Cargando room...</div>
       </div>
     );
   }
@@ -138,25 +194,28 @@ export default function RoomPage({ params }) {
     );
   }
 
-  if (!sala) {
+  if (!room) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
-        <div className="text-white text-xl">Sala no encontrada</div>
+        <div className="text-white text-xl">Room no encontrada</div>
       </div>
     );
   }
 
   // If game hasn't started, show lobby
-  if (!sala.state.started) {
+  if (!room.state.started) {
     return (
-      <RoomLobby 
-        sala={sala}
-        players={players}
-        role={role}
-        onStartGame={startGame}
-        user={user}
-        spotifyUser={spotifyUser}
-      />
+      <>
+        <RoomLobby 
+          room={room}
+          players={players}
+          role={role}
+          onStartGame={startGame}
+          user={user}
+          spotifyUser={spotifyUser}
+        />
+        <SpotifyLoginModal />
+      </>
     );
   }
 
@@ -168,20 +227,26 @@ export default function RoomPage({ params }) {
 
   if (role === 'host') {
     return (
-      <GameHost 
-        sala={sala}
-        players={players}
-        config={sala.config}
-        onBackToLobby={handleBackToLobby}
-      />
+      <>
+        <GameHost 
+          room={room}
+          players={players}
+          config={room.config}
+          onBackToLobby={handleBackToLobby}
+        />
+        <SpotifyLoginModal />
+      </>
     );
   } else {
     return (
-      <GamePlayer 
-        sala={sala}
-        players={players}
-        onBackToLobby={handleBackToLobby}
-      />
+      <>
+        <GamePlayer 
+          room={room}
+          players={players}
+          onBackToLobby={handleBackToLobby}
+        />
+        <SpotifyLoginModal />
+      </>
     );
   }
 }

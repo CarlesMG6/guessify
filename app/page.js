@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { getSpotifyAuthUrl } from '../lib/spotify';
 import CreateRoom from '../components/CreateRoom';
@@ -9,6 +10,7 @@ import UserProfile from '../components/UserProfile';
 import ClientOnly from '../components/ClientOnly';
 
 export default function Home() {
+  const router = useRouter();
   const { user, spotifyUser, loading, loginAnonymously, isClient } = useAuth();
   const [view, setView] = useState('home'); // 'home', 'create', 'join'
   const [roomPin, setRoomPin] = useState('');
@@ -34,6 +36,10 @@ export default function Home() {
   }, [loading, user, loginAnonymously, isClient, spotifyUser]);
 
   const handleSpotifyLogin = () => {
+    // Store current URL in localStorage for redirect after auth
+    const currentUrl = window.location.href;
+    localStorage.setItem('spotify_redirect_after_auth', currentUrl);
+    
     const authUrl = getSpotifyAuthUrl();
     window.location.href = authUrl;
   };
@@ -61,6 +67,24 @@ export default function Home() {
     }
   };
 
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // TODO: Implementar lógica para unirse a la sala
+      // Por ahora simulamos la navegación
+      router.push(`/host`);
+    } catch (error) {
+      console.error('Error creating room:', error);
+      setError('Error al crear la sala. Inténtalo de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isClient || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
@@ -78,25 +102,27 @@ export default function Home() {
           <form onSubmit={handleJoinRoom} className="space-y-6">
             {/* Room PIN Input */}
             <div>
-              {/*<label 
-                  htmlFor="roomPin" 
-                  className="block text-sm font-medium text-gray-300 mb-2"
-                >
-                  PIN de la Sala
-                </label>*/}
+              <label
+                htmlFor="roomPin"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
+                PIN de la Sala
+              </label>
               <input
                 id="roomPin"
                 type="text"
                 value={roomPin}
-                onChange={(e) => setRoomPin(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  // Only allow digits
+                  const digitsOnly = e.target.value.replace(/\D/g, '');
+                  setRoomPin(digitsOnly);
+                }}
                 placeholder="Introduce el PIN"
                 className="w-full px-4 py-3 bg-spotify-light-gray rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-spotify-green focus:border-transparent text-center text-lg font-mono tracking-wider"
                 maxLength={6}
                 disabled={isLoading}
               />
             </div>
-
-            {/* Error Message */}
             {error && (
               <div className="bg-red-900/50 border border-red-700 rounded-lg p-3">
                 <p className="text-red-400 text-sm text-center">{error}</p>
@@ -119,22 +145,22 @@ export default function Home() {
             </button>
           </form>
         </div>
-            {/* Join Button */}
+        {/* Join Button */}
 
-            <h1 className="mt-16 text-gray-300">O bien crea una nueva partida</h1>
-            <button
-              type="submit"
-              className="mt-4 w-80 bg-white text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-lg"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full h-5 w-5"></div>
-                  <span>Entrando...</span>
-                </div>
-              ) : (
-                'Crear Partida'
-              )}
-            </button>
+        <h1 className="mt-16 text-gray-300">O bien crea una nueva partida</h1>
+        <button
+          onClick={handleCreateRoom}
+          className="mt-4 w-80 bg-white text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-lg"
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="animate-spin rounded-full h-5 w-5"></div>
+              <span>Entrando...</span>
+            </div>
+          ) : (
+            'Crear Partida'
+          )}
+        </button>
       </div>
     </div>
   );

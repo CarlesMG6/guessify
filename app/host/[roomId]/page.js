@@ -4,20 +4,19 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { 
-  getSala, 
-  subscribeToSalaUpdates, 
+  getRoom, 
+  subscribeToRoomUpdates, 
   subscribeToPlayersUpdates,
-  updateSala 
+  updateRoom 
 } from '../../../lib/firestore';
-import RoomLobby from '../../../components/RoomLobby';
+import HostLobby from '../../../components/HostLobby';
 import GameHost from '../../../components/GameHost';
-import GamePlayer from '../../../components/GamePlayer';
 
 export default function RoomPage({ params }) {
   const { roomId } = params;
   const { user, spotifyUser } = useAuth();
   const router = useRouter();
-  const [sala, setSala] = useState(null);
+  const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,14 +36,14 @@ export default function RoomPage({ params }) {
 
     const loadRoom = async () => {
       try {
-        const roomData = await getSala(roomId);
+        const roomData = await getRoom(roomId);
         
         if (!roomData) {
-          setError('La sala no existe');
+          setError('La room no existe');
           return;
         }
 
-        setSala(roomData);
+        setRoom(roomData);
         
         // Set role based on host
         if (roomData.hostUserId === user.uid) {
@@ -53,7 +52,7 @@ export default function RoomPage({ params }) {
         
       } catch (error) {
         console.error('Error loading room:', error);
-        setError('Error al cargar la sala');
+        setError('Error al cargar la room');
       } finally {
         setLoading(false);
       }
@@ -70,11 +69,11 @@ export default function RoomPage({ params }) {
     const setupSubscriptions = async () => {
       try {
         // Subscribe to room updates
-        unsubscribeRoom = await subscribeToSalaUpdates(roomId, (doc) => {
+        unsubscribeRoom = await subscribeToRoomUpdates(roomId, (doc) => {
           if (doc.exists()) {
-            setSala({ id: doc.id, ...doc.data() });
+            setRoom({ id: doc.id, ...doc.data() });
           } else {
-            setError('La sala no existe');
+            setError('La room no existe');
           }
         });
 
@@ -88,7 +87,7 @@ export default function RoomPage({ params }) {
         });
       } catch (error) {
         console.error('Error setting up subscriptions:', error);
-        setError('Error al conectar con la sala');
+        setError('Error al conectar con la room');
       }
     };
 
@@ -101,10 +100,10 @@ export default function RoomPage({ params }) {
   }, [roomId]);
 
   const startGame = async () => {
-    if (role !== 'host' || !sala) return;
+    if (!room) return;
 
     try {
-      await updateSala(roomId, {
+      await updateRoom(roomId, {
         'state.started': true,
         'state.currentRound': 0
       });
@@ -117,7 +116,7 @@ export default function RoomPage({ params }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
-        <div className="text-white text-xl">Cargando sala...</div>
+        <div className="text-white text-xl">Cargando room...</div>
       </div>
     );
   }
@@ -138,19 +137,17 @@ export default function RoomPage({ params }) {
     );
   }
 
-  if (!sala) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
-        <div className="text-white text-xl">Sala no encontrada</div>
-      </div>
-    );
-  }
+  // If game has started, show game interface
+  const handleBackToLobby = () => {
+    // This would require implementing a function to reset game state
+    router.push('/');
+  };
 
   // If game hasn't started, show lobby
-  if (!sala.state.started) {
+  if (!room.state.started) {
     return (
-      <RoomLobby 
-        sala={sala}
+      <HostLobby 
+        room={room}
         players={players}
         role={role}
         onStartGame={startGame}
@@ -158,28 +155,12 @@ export default function RoomPage({ params }) {
         spotifyUser={spotifyUser}
       />
     );
-  }
-
-  // If game has started, show game interface
-  const handleBackToLobby = () => {
-    // This would require implementing a function to reset game state
-    router.push('/');
-  };
-
-  if (role === 'host') {
-    return (
-      <GameHost 
-        sala={sala}
-        players={players}
-        config={sala.config}
-        onBackToLobby={handleBackToLobby}
-      />
-    );
   } else {
     return (
-      <GamePlayer 
-        sala={sala}
+      <GameHost 
+        room={room}
         players={players}
+        config={room.config}
         onBackToLobby={handleBackToLobby}
       />
     );
