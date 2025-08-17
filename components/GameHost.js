@@ -11,18 +11,21 @@ import PointsPhase from './Phase/PointsPhase';
 import ResultsPhase from './Phase/ResultsPhase';
 import InitialPhase from './Phase/InitialPhase';
 
-export default function GameHost({ sala, players, onBackToLobby }) {
+export default function GameHost({ room, players, onBackToLobby }) {
   const { user, spotifyUser } = useAuth();
   const [gameState, setGameState] = useState('preparing'); // preparing, playing, final_results
   const [currentSong, setCurrentSong] = useState(null);
-  const [currentRound, setCurrentRound] = useState(0);
-  const [currentSongIndex, setCurrentSongIndex] = useState(0);
-  const [roundPhase, setRoundPhase] = useState('preparing'); // preparing, voting, results, points, standings
   const [playlist, setPlaylist] = useState([]);
   const [votes, setVotes] = useState([]);
-  const [scores, setScores] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Get state from room data
+  const currentRound = room?.state?.currentRound || 0;
+  const roundPhase = room?.state?.currentPhase || 'preparing';
+  const gameStarted = room?.state?.started || false;
+  const gameFinished = room?.state?.finished || false;
+  const phaseEndTime = room?.state?.phaseEndTime || null;
   
   const TIME_PREPARATION = 5; // seconds for preparation phase
   const TIME_VOTING = 15; // seconds for voting phase
@@ -44,73 +47,127 @@ export default function GameHost({ sala, players, onBackToLobby }) {
   
   const audioRef = useRef(null); // Keep for fallback
 
-  const nextPhase = useCallback(() => {
+  const nextPhase = useCallback(async () => {
     console.log('NextPhase called. Current state:', {
       roundPhase,
-      currentSongIndex,
+      currentRound,
       currentSong: currentSong?.trackName,
       playlistLength: playlist.length
     });
     
-    setRoundPhase(currentPhase => {
-      console.log('Current phase:', currentPhase, 'Moving to next phase...');
-      
-      if (currentPhase === 'preparing') {
-        // Move to voting phase (with music playing)
-        console.log('Moving to VOTANDO phase');
-        const songToPlay = playlist[currentSongIndex];
-        if (songToPlay) {
-          playSong(songToPlay);
-        } else {
-          console.error('No song found at index:', currentSongIndex);
-        }
-        // Use setTimeout to avoid race condition
-        //setTimeout(() => startTimer(TIME_VOTING), 100);
-        return 'voting';
-      } else if (currentPhase === 'voting') {
-        // Move to results phase (stop music)
-        console.log('Moving to RESULTADOS phase');
-        stopSong();
-        calculateRoundResults(currentRound);
-        //setTimeout(() => startTimer(TIME_RESULTS), 100);
-        return 'results';
-      } else if (currentPhase === 'results') {
-        // Move to scores phase
-        console.log('Moving to POINTS phase');
-        //setTimeout(() => startTimer(TIME_POINTS), 100);
-        return 'points';
-      } else if (currentPhase === 'points') {
-        // Move to standings phase
-        console.log('Moving to STANDINGS phase');
-        //setTimeout(() => startTimer(TIME_POINTS), 100);
-        return 'standings';
-      } else if (currentPhase === 'standings') {
-        // Next round or end game
-        const nextSongIndex = currentSongIndex + 1;
-        console.log('Moving to next song. Current index:', currentSongIndex, 'Next index:', nextSongIndex, 'Playlist length:', playlist.length);
-        
-        if (nextSongIndex < playlist.length) {
-          console.log('Starting next round with song index:', nextSongIndex);
-          startRound(nextSongIndex);
-        } else {
-          console.log('No more songs, ending game');
-          endGame();
-        }
-        return 'preparing'; // Reset to preparing for next round
+    let newPhase = roundPhase;
+    let newRound = currentRound;
+    let newPhaseEndTime = null;
+    
+    if (roundPhase === 'preparing') {
+      // Move to voting phase (with music playing)
+      console.log('Moving to VOTING phase');
+      const songToPlay = playlist[currentRound];
+      if (songToPlay) {
+        playSong(songToPlay);
+      } else {
+        console.error('No song found at index:', currentRound);
       }
-      return currentPhase;
-    });
-  }, [roundPhase, currentSongIndex, currentSong, playlist.length, currentRound]);
+      newPhase = 'voting';
+      newPhaseEndTime = new Date(Date.now() + TIME_VOTING * 1000);
+    } else if (roundPhase === 'voting') {
+      // Move to results phase (stop music)
+      console.log('Moving to RESULTS phase');
+      stopSong();
+      calculateRoundResults(currentRound);
+      newPhase = 'results';
+      newPhaseEndTime = new Date(Date.now() + TIME_RESULTS * 1000);
+    } else if (roundPhase === 'results') {
+      // Move to scores phase
+      console.log('Moving to POINTS phase');
+      newPhase = 'points';
+      newPhaseEndTime = new Date(Date.now() + TIME_POINTS * 1000);
+    } else if (roundPhase === 'points') {
+      // Move to standings phase
+      console.log('Moving to STANDINGS phase');
+      newPhase = 'standings';
+      newPhaseEndTime = new Date(Date.now() + TIME_POINTS * 1000);
+    } else if (roundPhase === 'standings') {
+      // Next round or end game
+      const nextRoundIndex = currentRound + 1;
+      console.log('Moving to next song. Current round:', currentRound, 'Next round:', nextRoundIndex, 'Playlist length:', playlist.length);
+      
+      if (nextRoundIndex < playlist.length) {
+        console.log('Starting next round with index:', nextRoundIndex);
+        newRound = nextRoundIndex;
+        newPhase = 'preparing';
+        newPhaseEndTime = new Date(Date.now() + TIME_PREPARATION * 1000);
+      } else {
+        console.log('No more songs, ending game');
+        try {
+          const { updateGameState } = await import('../lib/firestore');
+          await updateGameState(room.id, {
+            finished: true,
+            currentPhase: 'finished'
+          });
+        } catch (error) {
+          console.error('Error ending game:', error);
+        }
+        return;
+      }
+    }
+    
+    const newPhaseStartTime = new Date();
+    // Update game state in database
+    try {
+      const { updateGameState } = await import('../lib/firestore');
+      await updateGameState(room.id, {
+        currentRound: newRound,
+        currentPhase: newPhase,
+        phaseEndTime: newPhaseEndTime,
+        phaseStartTime: newPhaseStartTime
+      });
+    } catch (error) {
+      console.error('Error updating game state:', error);
+    }
+  }, [roundPhase, currentRound, currentSong, playlist.length, room.id]);
 
   // Initialize countdown timer
   const { secondsLeft: timeLeft, start: startTimer, stop: stopTimer, isRunning } = useCountdown(nextPhase);
   
+  // Set current song based on current round
+  useEffect(() => {
+    if (playlist.length > 0 && currentRound < playlist.length) {
+      const song = playlist[currentRound];
+      setCurrentSong(song);
+    }
+  }, [playlist, currentRound]);
+
+  // Handle phase timer based on phaseEndTime
+  useEffect(() => {
+    if (!phaseEndTime) return;
+    
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const endTime = new Date(phaseEndTime).getTime();
+      
+      if (now >= endTime) {
+        nextPhase();
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [phaseEndTime, nextPhase]);
+
+  // Calculate time left for display
+  const getTimeLeft = () => {
+    if (!phaseEndTime) return 0;
+    const now = Date.now();
+    const endTime = new Date(phaseEndTime).getTime();
+    return Math.max(0, Math.floor((endTime - now) / 1000));
+  };
+
   // Load playlist and prepare game
   useEffect(() => {
-    if (sala && players.length > 0) {
+    if (room && players.length > 0) {
       prepareGame();
     }
-  }, [sala, players]);
+  }, [room, players]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -127,7 +184,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
       const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../lib/gameUtils');
       
       // Get users with Spotify data
-      const usersForPlaylist = await getUsersForPlaylist(sala.id);
+      const usersForPlaylist = await getUsersForPlaylist(room.id);
       
       if (usersForPlaylist.length === 0) {
         setError('No hay jugadores con datos de Spotify para generar la playlist');
@@ -135,11 +192,11 @@ export default function GameHost({ sala, players, onBackToLobby }) {
       }
       
       // Generate playlist
-      const generatedPlaylist = generateGamePlaylist(usersForPlaylist, sala.config.numSongs);
+      const generatedPlaylist = generateGamePlaylist(usersForPlaylist, room.config.numSongs);
       const validation = validatePlaylistForGame(generatedPlaylist);
       
       if (!validation.hasEnoughTracks) {
-        setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${sala.config.numSongs} necesarias.`);
+        setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${room.config.numSongs} necesarias.`);
         return;
       }
       
@@ -172,13 +229,22 @@ export default function GameHost({ sala, players, onBackToLobby }) {
     });
     
     try {
-      const { startGame: startGameInDB, subscribeToVotesUpdates } = await import('../lib/firestore');
+      const { startGame: startGameInDB, subscribeToVotesUpdates, updateGameState } = await import('../lib/firestore');
       
       // Start game in database
-      await startGameInDB(sala.id, playlist);
+      await startGameInDB(room.id, playlist);
+      
+      // Initialize game state
+      await updateGameState(room.id, {
+        started: true,
+        finished: false,
+        currentRound: 0,
+        currentPhase: 'preparing',
+        phaseEndTime: new Date(Date.now() + TIME_PREPARATION * 1000)
+      });
       
       // Subscribe to votes
-      const unsubscribeVotes = await subscribeToVotesUpdates(sala.id, (snapshot) => {
+      const unsubscribeVotes = await subscribeToVotesUpdates(room.id, (snapshot) => {
         const votesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -186,9 +252,8 @@ export default function GameHost({ sala, players, onBackToLobby }) {
         setVotes(votesData);
       });
       
-      // Start first round
+      // Set game state to playing
       setGameState('playing');
-      startRound(0); // Start with first song (index 0)
       
       return () => {
         unsubscribeVotes();
@@ -197,38 +262,6 @@ export default function GameHost({ sala, players, onBackToLobby }) {
       console.error('Error starting game:', error);
       setError('Error al iniciar el juego: ' + error.message);
     }
-  };
-
-  const startRound = (songIndex) => {
-    console.log('Starting round with songIndex:', songIndex, 'Playlist length:', playlist.length);
-    
-    if (songIndex >= playlist.length) {
-      console.log('No more songs, ending game');
-      endGame();
-      return;
-    }
-    
-    const song = playlist[songIndex];
-    console.log('Setting song:', song?.trackName, 'by', song?.artistName, 'at index:', songIndex);
-    console.log('Song object structure:', JSON.stringify(song, null, 2));
-    
-    if (!song) {
-      console.error('Song is null at index:', songIndex);
-      setError('Error: Canción no encontrada');
-      return;
-    }
-    
-    if (!song.trackId) {
-      console.error('Song missing trackId:', song);
-      setError('Error: Canción sin ID de Spotify');
-      return;
-    }
-    
-    setCurrentSong(song);
-    setCurrentSongIndex(songIndex);
-    setCurrentRound(songIndex + 1);
-    setRoundPhase('preparing');
-    //startTimer(TIME_PREPARATION);
   };
 
   const playSong = async (song) => {
@@ -322,7 +355,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
   const calculateRoundResults = async (roundNumber) => {
     try {
       const { calculateScores } = await import('../lib/firestore');
-      const scoreUpdates = await calculateScores(sala.id, roundNumber);
+      const scoreUpdates = await calculateScores(room.id, roundNumber);
       
       // Update local scores
       setScores(prev => {
@@ -338,10 +371,20 @@ export default function GameHost({ sala, players, onBackToLobby }) {
     }
   };
 
-  const endGame = () => {
+  const endGame = async () => {
     stopTimer();
     stopSong();
     setGameState('final_results');
+    
+    try {
+      const { updateGameState } = await import('../lib/firestore');
+      await updateGameState(room.id, {
+        finished: true,
+        currentPhase: 'finished'
+      });
+    } catch (error) {
+      console.error('Error ending game:', error);
+    }
   };
 
   const skipToNextPhase = () => {
@@ -400,7 +443,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
     );
   }
 
-  if (gameState === 'preparing') {
+  if (gameState === 'preparing' || !gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
         <div className="max-w-4xl mx-auto">
@@ -409,7 +452,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
             
             <div className="space-y-4 mb-8">
               <div className="text-white">
-                <span className="text-gray-400">Sala:</span> {sala.codigo}
+                <span className="text-gray-400">Room:</span> {room.codigo}
               </div>
               <div className="text-white">
                 <span className="text-gray-400">Jugadores:</span> {players.length}
@@ -418,7 +461,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
                 <span className="text-gray-400">Canciones:</span> {playlist.length}
               </div>
               <div className="text-white">
-                <span className="text-gray-400">Tiempo por ronda:</span> {sala.config.timePerRound}s
+                <span className="text-gray-400">Tiempo por ronda:</span> {room.config.timePerRound}s
               </div>
               <div className="text-white">
                 <span className="text-gray-400">Reproductor Spotify:</span> 
@@ -475,7 +518,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
     );
   }
 
-  if (gameState === 'playing') {
+  if (gameState === 'playing' || gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
         <audio ref={audioRef} />
@@ -486,19 +529,19 @@ export default function GameHost({ sala, players, onBackToLobby }) {
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold text-white">
-                  Ronda {currentRound} de {playlist.length}
+                  Ronda {currentRound + 1} de {playlist.length}
                 </h2>
                 <div className="text-gray-400">
-                  Sala: {sala.codigo} | {players.length} jugadores
+                  Room: {room.codigo} | {players.length} jugadores
                 </div>
                 {/* DEBUG INFO */}
                 <div className="text-xs text-yellow-400 mt-1">
-                  DEBUG: Fase: {roundPhase} | Ronda: {currentRound} | Song Index: {currentSongIndex} | Canción: {currentSong?.trackName || 'No hay canción'}
+                  DEBUG: Fase: {roundPhase} | Ronda: {currentRound + 1} | Song Index: {currentRound} | Canción: {currentSong?.trackName || 'No hay canción'}
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold text-spotify-green">
-                  {formatTime(timeLeft)}
+                  {formatTime(getTimeLeft())}
                 </div>
                 <div className="text-gray-400 capitalize">
                   {roundPhase === 'preparing' && 'Preparando...'}
@@ -511,10 +554,10 @@ export default function GameHost({ sala, players, onBackToLobby }) {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="mt-12">
             {/* Main Display */}
                   <div className="lg:col-span-2">
-                    <div className="bg-spotify-gray rounded-lg p-8 text-center">
+                    <div className=" rounded-lg p-8 text-center">
                     {currentSong && (
                       <>
                       {roundPhase === 'preparing' && (
@@ -527,7 +570,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
                         <GuessingPhase
                           question={"¿Quién ha escuchado más esta canción?"}
                           currentSong={currentSong}
-                          room = {sala}
+                          room = {room}
                         />
                       )}
 
@@ -535,7 +578,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
                         <ResultsPhase
                           question={"¿Quién ha escuchado más esta canción?"}
                           currentSong={currentSong}
-                          room = {sala}
+                          room = {room}
                           players={players}
                         />
                       )}
@@ -543,8 +586,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
                       {roundPhase === 'points' && (
                         <PointsPhase
                           players={players}
-                          room = {sala}
-                          scores={scores}
+                          room = {room}
                         />
                       )}
 
@@ -637,11 +679,10 @@ export default function GameHost({ sala, players, onBackToLobby }) {
 
   if (gameState === 'final_results') {
     const sortedPlayers = [...players].sort((a, b) => {
-      const scoreA = getPlayerScore(players, scores, a.userId);
-      const scoreB = getPlayerScore(players, scores, b.userId);
+      const scoreA = getPlayerScore(players, a.userId);
+      const scoreB = getPlayerScore(players, b.userId);
       return scoreB - scoreA;
     });
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
         <div className="max-w-4xl mx-auto">
@@ -652,7 +693,7 @@ export default function GameHost({ sala, players, onBackToLobby }) {
 
             <div className="space-y-4 mb-8">
               {sortedPlayers.map((player, index) => {
-                const playerScore = getPlayerScore(players, scores, player.userId);
+                const playerScore = getPlayerScore(players, player.userId);
                 return (
                   <div
                     key={player.userId}

@@ -1,7 +1,6 @@
-
 import { getPlayerScore } from '../../lib/gameHelpers';
 
-const PointsPhase = ({ players, room }) => {
+const PointsPhasePlayer = ({ players, room }) => {
     return (
         <div className="bg-blue-900 rounded-lg p-6 mt-4">
             <h3 className="text-xl font-bold text-white mb-4 text-center">
@@ -31,4 +30,4 @@ const PointsPhase = ({ players, room }) => {
     );
 };
 
-export default PointsPhase;
+export default PointsPhasePlayer;

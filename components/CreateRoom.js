@@ -7,14 +7,14 @@ import GamePlayer from './GamePlayer';
 
 export default function CreateRoom() {
   const { user, spotifyUser } = useAuth();
-  const [sala, setSala] = useState(null);
+  const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
   const [config, setConfig] = useState({
     numSongs: 10,
     autoStart: false,
     delayStartTime: 5,
     timePerRound: 15,
-    revealSongName: false,
+    revealSongName: true,
     revealArtists: true,
     revealCover: true
   });
@@ -24,10 +24,10 @@ export default function CreateRoom() {
   const [gameStarted, setGameStarted] = useState(false);
 
   // Memoize the subscription setup to avoid recreating it
-  const setupSubscription = useCallback(async (salaId) => {
+  const setupSubscription = useCallback(async (roomId) => {
     try {
       const { subscribeToPlayersUpdates } = await import('../lib/firestore');
-      return await subscribeToPlayersUpdates(salaId, (snapshot) => {
+      return await subscribeToPlayersUpdates(roomId, (snapshot) => {
         const playersData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -41,24 +41,24 @@ export default function CreateRoom() {
     }
   }, []);
 
-  // Subscribe to player updates when sala is created
+  // Subscribe to player updates when room is created
   useEffect(() => {
-    if (!sala?.id) return;
+    if (!room?.id) return;
 
     let unsubscribe = () => {};
 
-    setupSubscription(sala.id).then((unsub) => {
+    setupSubscription(room.id).then((unsub) => {
       unsubscribe = unsub || (() => {});
     });
 
     return () => unsubscribe();
-  }, [sala?.id, setupSubscription]);
+  }, [room?.id, setupSubscription]);
 
-  const handleCreateSala = async (e) => {
+  const handleCreateRoom = async (e) => {
     e.preventDefault();
     
     if (!user || !spotifyUser) {
-      setError('Debes estar conectado con Spotify para crear una sala');
+      setError('Debes estar conectado con Spotify para crear una room');
       return;
     }
 
@@ -67,20 +67,20 @@ export default function CreateRoom() {
 
     try {
       // Dynamic import to avoid SSR issues
-      const { createSala, addPlayerToSala } = await import('../lib/firestore');
+      const { createRoom, addPlayerToRoom } = await import('../lib/firestore');
       
-      // Create sala
-      const newSala = await createSala(user.uid, config);
-      console.log('Sala creada:', newSala);
+      // Create room
+      const newRoom = await createRoom(user.uid, config);
+      console.log('Room creada:', newRoom);
       
       // Add host as first player
-      await addPlayerToSala(newSala.id, user.uid, spotifyUser.nombre);
+      await addPlayerToRoom(newRoom.id, user.uid, spotifyUser.nombre);
       
-      setSala(newSala);
+      setRoom(newRoom);
       setView('lobby');
     } catch (error) {
       console.error('Error creating room:', error);
-      setError('Error al crear la sala. Inténtalo de nuevo.');
+      setError('Error al crear la room. Inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function CreateRoom() {
 
     try {
       const { startGame } = await import('../lib/firestore');
-      await startGame(sala.id, config);
+      await startGame(room.id, config);
       setGameStarted(true);
       setView('game');
     } catch (error) {
@@ -116,20 +116,20 @@ export default function CreateRoom() {
   };
 
   const getJoinUrl = () => {
-    if (typeof window !== 'undefined' && sala) {
-      return `${window.location.origin}/?join=${sala.id}`;
+    if (typeof window !== 'undefined' && room) {
+      return `${window.location.origin}/?join=${room.id}`;
     }
     return '';
   };
 
   // Game view - check if user is host or player
-  if (view === 'game' && sala && gameStarted) {
-    const isHost = sala.hostUserId === user?.uid;
+  if (view === 'game' && room && gameStarted) {
+    const isHost = room.hostUserId === user?.uid;
     
     if (isHost) {
       return (
         <GameHost
-          sala={sala}
+          room={room}
           players={players}
           config={config}
           onBackToLobby={handleBackToLobby}
@@ -138,7 +138,7 @@ export default function CreateRoom() {
     } else {
       return (
         <GamePlayer
-          sala={sala}
+          room={room}
           players={players}
           onBackToLobby={handleBackToLobby}
         />
@@ -146,12 +146,12 @@ export default function CreateRoom() {
     }
   }
 
-  if (view === 'lobby' && sala) {
+  if (view === 'lobby' && room) {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="bg-spotify-gray rounded-lg p-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Sala: {sala.codigo}</h2>
+            <h2 className="text-2xl font-bold text-white">Room: {room.codigo}</h2>
             <button
               onClick={() => setView('config')}
               className="text-spotify-green hover:text-green-400 transition-colors duration-200"
@@ -218,13 +218,13 @@ export default function CreateRoom() {
             <div className="lg:col-span-2 space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-white mb-3">Código de Sala</h3>
+                  <h3 className="text-lg font-semibold text-white mb-3">Código de Room</h3>
                   <div className="bg-gray-700 rounded-lg p-4">
                     <div className="text-3xl font-bold text-spotify-green mb-2">
-                      {sala.codigo}
+                      {room.codigo}
                     </div>
                     <button
-                      onClick={() => navigator.clipboard.writeText(sala.id)}
+                      onClick={() => navigator.clipboard.writeText(room.id)}
                       className="text-sm text-gray-400 hover:text-white transition-colors"
                     >
                       Copiar código
@@ -308,7 +308,7 @@ export default function CreateRoom() {
           </div>
         )}
 
-        <form onSubmit={handleCreateSala} className="space-y-6">
+        <form onSubmit={handleCreateRoom} className="space-y-6">
           {/* Número de canciones */}
           <div>
             <label className="block text-white text-sm font-medium mb-2">
@@ -429,7 +429,7 @@ export default function CreateRoom() {
             disabled={loading}
             className="w-full bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
           >
-            {loading ? 'Creando sala...' : 'Crear Sala'}
+            {loading ? 'Creando room...' : 'Crear Room'}
           </button>
         </form>
       </div>

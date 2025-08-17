@@ -1,4 +1,4 @@
-
+import { getPlayerScore } from "../../lib/gameHelpers";
 
 const StandingsPhase = ({ players}) => {
     return (
@@ -8,7 +8,7 @@ const StandingsPhase = ({ players}) => {
             </h3>
             <div className="space-y-3">
                 {players
-                    .sort((a, b) => getPlayerScore(b.userId) - getPlayerScore(a.userId))
+                    .sort((a, b) => getPlayerScore(players, b.userId) - getPlayerScore(players, a.userId))
                     .map((player, index) => (
                         <div key={player.userId} className={`flex justify-between items-center p-3 rounded-lg ${index === 0 ? 'bg-yellow-600' :
                                 index === 1 ? 'bg-gray-400' :
@@ -21,7 +21,7 @@ const StandingsPhase = ({ players}) => {
                                 {player.nombre}
                             </span>
                             <span className="text-white text-xl font-bold">
-                                {getPlayerScore(player.userId)} pts
+                                {getPlayerScore(players, player.userId)} pts
                             </span>
                         </div>
                     ))}

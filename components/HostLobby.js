@@ -51,7 +51,7 @@ export default function HostLobby({ room, players, role, onStartGame, user, spot
         <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black">
 
             <div className="max-w-4xl mx-auto p-6">
-                <div className='flex flex-row items-center mt-12'>
+                <div className='flex flex-col md:flex-row items-center mt-12 gap-8'>
                     {/* Room Info */}
 
                     <div className="flex flex-col items-center flex-1">
@@ -65,7 +65,7 @@ export default function HostLobby({ room, players, role, onStartGame, user, spot
             </div>
 
             {/* Players List */}
-            <div className="rounded-lg p-6">
+            <div className="mx-auto">
                 {/*}
                 <h3 className="text-lg font-bold text-white mb-4">
                     Jugadores ({players.length}/12)
@@ -80,26 +80,32 @@ export default function HostLobby({ room, players, role, onStartGame, user, spot
                         {canStart ? 'Iniciar Juego' : `Necesitas al menos 1 jugador`}
                     </button>
                 </div>
-                <div className="mt-60">
+                <div className="mt-16 md:mt-60">
                     {players.length === 0 ? (
                         <p className="text-gray-400 text-center py-8">
                             Esperando jugadores...
                         </p>
                     ) : (
-                        <div className="grid md:grid-cols-2 gap-3">
+                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8 mx-auto w-10/12 xl:w-full xl:max-w-6xl items-center justify-center">
                             {players.map((player, index) => (
                                 <div
                                     key={player.id}
-                                    className="flex items-center space-x-3 bg-gray-700 rounded-lg p-3"
+                                    className="flex w-fit items-center space-x-4 bg-gray-700 px-8 py-4 rounded-full"
                                 >
-                                    <div className="w-8 h-8 bg-spotify-green rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        {index + 1}
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-medium">{player.nombre}</p>
-                                        {player.userId === room.hostUserId && (
-                                            <p className="text-spotify-green text-xs">Anfitrión</p>
+                                    <div className="w-16 md:w-24
+                                     flex items-center justify-center text-white font-bold text-sm mx-auto">
+                                        {player?.avatar ? (
+                                            <img
+                                                src={`/img/playerImages/${player?.avatar}.png`}
+                                                alt="Tu avatar"
+                                                className="w-16 h-16 md:w-24 md:h-24 mx-auto"
+                                            />
+                                        ) : (
+                                            <span>{player.nombre?.[0]?.toUpperCase() || '?'}</span>
                                         )}
+                                    </div>
+                                    <div className='text-md md:text-xl'>
+                                        <p className="text-white font-medium">{player.nombre}</p>
                                     </div>
                                 </div>
                             ))}
