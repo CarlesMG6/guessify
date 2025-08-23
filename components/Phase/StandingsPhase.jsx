@@ -1,8 +1,8 @@
 import { getPlayerScore } from "../../lib/gameHelpers";
 import QuestionHeader from "../QuestionHeader";
 
-const StandingsPhase = ({ players, useMockData = false }) => {
-    
+const StandingsPhase = ({ players, useMockData = false, skipToNextPhase, textSkip }) => {
+
     // Mock data for testing styles
     const mockPlayers = [
         {
@@ -48,7 +48,7 @@ const StandingsPhase = ({ players, useMockData = false }) => {
 
     return (
         <div className='h-full w-full flex items-center flex-col justify-center'>
-            <QuestionHeader question={"Clasificación"} />
+            <QuestionHeader question={"Clasificación"} skipToNextPhase={skipToNextPhase} textSkip={textSkip} />
             <div className="flex flex-col items-center justify-center h-full mx-auto w-full max-w-3xl space-y-3">
                 {playersData
                     .sort((a, b) => {
@@ -91,7 +91,7 @@ const StandingsPhase = ({ players, useMockData = false }) => {
                                         {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
                                         </div>
                                     </span>
-                                    <div className="ml-3">
+                                    <div className="ml-3 text-xl">
                                     {player.nombre}
                                     </div>
                                 </span>

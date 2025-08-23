@@ -1,14 +1,14 @@
 import QuestionHeader from "../QuestionHeader";
 
 
-const GuessingPhase = ({ currentSong, question, room }) => {
+const GuessingPhase = ({ currentSong, question, room, skipToNextPhase, textSkip}) => {
     // show image, title and author based on room.config.revealSongName and room.config.revealSongCover and room.config.revealSongArtist
     const showCover = room?.config?.revealCover;
     const showTitle = room?.config?.revealSongName;
     const showArtist = room?.config?.revealArtists;
     return (
-        <div className="h-full mb-6 relative flex justify-center items-center flex-col">
-            <QuestionHeader question={question} />
+        <div className="h-full w-full items-center flex flex-col justify-center">
+            <QuestionHeader question={question} skipToNextPhase={skipToNextPhase} textSkip={textSkip} />
             <div className="flex flex-col items-center justify-center h-full">
                 {/* Spinning vinyl record */}
                 <div className="relative w-48 md:w-80 h-48 md:h-80 mx-auto">

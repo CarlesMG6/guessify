@@ -16,8 +16,9 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const [currentSong, setCurrentSong] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [votes, setVotes] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
   
   // Get state from room data
   const currentRound = room?.state?.currentRound || 0;
@@ -158,7 +159,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
   // Load playlist and prepare game
   useEffect(() => {
-    if (room && players.length > 0) {
+    if (room && players.length > 0 && loading) {
       prepareGame();
     }
   }, [room, players]);
@@ -517,7 +518,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
         <audio ref={audioRef} />
         
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="mt-12">
             {/* Main Display */}
                   <div className="lg:col-span-2">
@@ -527,6 +528,8 @@ export default function GameHost({ room, players, onBackToLobby }) {
                       {roundPhase === 'preparing' && (
                         <InitialPhase
                           question ={"Quien ha escuchado más esta canción?"}
+                          skipToNextPhase={skipToNextPhase}
+                          textSkip={"Siguiente"}
                         />
                       )}
 
@@ -535,6 +538,8 @@ export default function GameHost({ room, players, onBackToLobby }) {
                           question={"¿Quién ha escuchado más esta canción?"}
                           currentSong={currentSong}
                           room = {room}
+                          skipToNextPhase={skipToNextPhase}
+                          textSkip={"Omitir"}
                         />
                       )}
 
@@ -544,13 +549,17 @@ export default function GameHost({ room, players, onBackToLobby }) {
                           currentSong={currentSong}
                           room = {room}
                           players={players}
+                          skipToNextPhase={skipToNextPhase}
+                          textSkip={"Siguiente"}
                         />
                       )}
 
                       {roundPhase === 'standings' && (
                         <StandingsPhase
                           players={players}
-                          useMockData={true}
+                          useMockData={false}
+                          skipToNextPhase={skipToNextPhase}
+                          textSkip={"Siguiente"}
                         />
                       )}
                       </>
@@ -565,21 +574,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
                 >
                   Saltar Fase
                 </button>
-                
-                {/* Debug Controls */}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <button
-                    onClick={() => console.log('Debug Info:', {
-                      playerReady,
-                      hasToken: !!spotifyToken,
-                      currentSong: currentSong?.trackName,
-                      deviceId: 'check console for useSpotifyPlayer logs'
-                    })}
-                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs py-1 px-2 rounded"
-                  >
-                    Debug Info
-                  </button>
-                </div>
               </div>
             </div>
 

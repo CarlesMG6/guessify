@@ -3,10 +3,10 @@ import { getPlayerName } from '../../lib/gameHelpers';
 import QuestionHeader from '../QuestionHeader';
 import VotesBarChart from '../VotesBarChart';
 
-const ResultsPhase = ({ currentSong, question, room, players }) => {
+const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, textSkip }) => {
     return (
         <div className='h-full w-full flex items-center flex-col justify-center'>
-            <QuestionHeader question={"Resultados"} />
+            <QuestionHeader question={"Resultados"} skipToNextPhase={skipToNextPhase} textSkip={textSkip} />
 
             {/* Spinning vinyl record */}
             <div className="flex flex-col items-center justify-center h-full w-full">
