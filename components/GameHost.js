@@ -7,7 +7,6 @@ import { useCountdown } from '../hooks/useCountdown';
 import { getPlayerScore } from '../lib/gameHelpers';
 import GuessingPhase from './Phase/GuessingPhase';
 import StandingsPhase from './Phase/StandingsPhase';
-import PointsPhase from './Phase/PointsPhase';
 import ResultsPhase from './Phase/ResultsPhase';
 import InitialPhase from './Phase/InitialPhase';
 
@@ -79,11 +78,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
       newPhaseEndTime = new Date(Date.now() + TIME_RESULTS * 1000);
     } else if (roundPhase === 'results') {
       // Move to scores phase
-      console.log('Moving to POINTS phase');
-      newPhase = 'points';
-      newPhaseEndTime = new Date(Date.now() + TIME_POINTS * 1000);
-    } else if (roundPhase === 'points') {
-      // Move to standings phase
       console.log('Moving to STANDINGS phase');
       newPhase = 'standings';
       newPhaseEndTime = new Date(Date.now() + TIME_POINTS * 1000);
@@ -524,40 +518,10 @@ export default function GameHost({ room, players, onBackToLobby }) {
         <audio ref={audioRef} />
         
         <div className="max-w-6xl mx-auto">
-          {/* Game Header */}
-          <div className="bg-spotify-gray rounded-lg p-6 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  Ronda {currentRound + 1} de {playlist.length}
-                </h2>
-                <div className="text-gray-400">
-                  Room: {room.codigo} | {players.length} jugadores
-                </div>
-                {/* DEBUG INFO */}
-                <div className="text-xs text-yellow-400 mt-1">
-                  DEBUG: Fase: {roundPhase} | Ronda: {currentRound + 1} | Song Index: {currentRound} | Canción: {currentSong?.trackName || 'No hay canción'}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-spotify-green">
-                  {formatTime(getTimeLeft())}
-                </div>
-                <div className="text-gray-400 capitalize">
-                  {roundPhase === 'preparing' && 'Preparando...'}
-                  {roundPhase === 'voting' && 'Votando (Escucha y vota)'}
-                  {roundPhase === 'results' && 'Resultados de la ronda'}
-                  {roundPhase === 'points' && 'Puntuaciones'}
-                  {roundPhase === 'standings' && 'Clasificación'}
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="mt-12">
             {/* Main Display */}
                   <div className="lg:col-span-2">
-                    <div className=" rounded-lg p-8 text-center">
+                    <div className="h-screen rounded-lg p-8 text-center">
                     {currentSong && (
                       <>
                       {roundPhase === 'preparing' && (
@@ -583,16 +547,10 @@ export default function GameHost({ room, players, onBackToLobby }) {
                         />
                       )}
 
-                      {roundPhase === 'points' && (
-                        <PointsPhase
-                          players={players}
-                          room = {room}
-                        />
-                      )}
-
                       {roundPhase === 'standings' && (
                         <StandingsPhase
                           players={players}
+                          useMockData={true}
                         />
                       )}
                       </>
@@ -624,6 +582,15 @@ export default function GameHost({ room, players, onBackToLobby }) {
                 </div>
               </div>
             </div>
+
+{/*
+                      {roundPhase === 'points' && (
+                        <PointsPhase
+                          players={players}
+                          room = {room}
+                        />
+                      )}
+*/}
 
             {/* Players and Votes */}
             {/*
@@ -677,6 +644,35 @@ export default function GameHost({ room, players, onBackToLobby }) {
     );
   }
 
+  /*
+          <div className="bg-spotify-gray rounded-lg p-6 mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white">
+                  Ronda {currentRound + 1} de {playlist.length}
+                </h2>
+                <div className="text-gray-400">
+                  Room: {room.codigo} | {players.length} jugadores
+                </div>
+                <div className="text-xs text-yellow-400 mt-1">
+                  DEBUG: Fase: {roundPhase} | Ronda: {currentRound + 1} | Song Index: {currentRound} | Canción: {currentSong?.trackName || 'No hay canción'}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-spotify-green">
+                  {formatTime(getTimeLeft())}
+                </div>
+                <div className="text-gray-400 capitalize">
+                  {roundPhase === 'preparing' && 'Preparando...'}
+                  {roundPhase === 'voting' && 'Votando (Escucha y vota)'}
+                  {roundPhase === 'results' && 'Resultados de la ronda'}
+                  {roundPhase === 'points' && 'Puntuaciones'}
+                  {roundPhase === 'standings' && 'Clasificación'}
+                </div>
+              </div>
+            </div>
+          </div>
+   */
   if (gameState === 'final_results') {
     const sortedPlayers = [...players].sort((a, b) => {
       const scoreA = getPlayerScore(players, a.userId);

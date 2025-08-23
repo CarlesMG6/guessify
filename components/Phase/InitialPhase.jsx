@@ -1,10 +1,11 @@
+import QuestionHeader from "../QuestionHeader";
 
 
-const InitialPhase = ({question}) => {
+const InitialPhase = ({ question }) => {
     return (
-        <h3 className="text-2xl font-bold text-white mb-2">
-            Preparando :{question}
-        </h3>
+        <div className="h-full w-full items-center flex flex-col justify-center">
+            <QuestionHeader question={question} />
+        </div>
     );
 };
 

@@ -1,30 +1,35 @@
 
 import { getPlayerName } from '../../lib/gameHelpers';
+import QuestionHeader from '../QuestionHeader';
+import VotesBarChart from '../VotesBarChart';
 
 const ResultsPhase = ({ currentSong, question, room, players }) => {
     return (
-        <div>
-            <h3 className="text-2xl font-bold text-white mb-2">
-                {question}
-            </h3>
+        <div className='h-full w-full flex items-center flex-col justify-center'>
+            <QuestionHeader question={"Resultados"} />
+
             {/* Spinning vinyl record */}
-            <div className="relative w-48 h-48 mx-auto">
-                <img
-                    src={currentSong.coverUrl}
-                    alt={currentSong.trackName}
-                    className="w-48 h-48 rounded-lg shadow-lg"
+            <div className="flex flex-col items-center justify-center h-full w-full">
+                {/* Votes Bar Chart */}
+                <VotesBarChart
+                    room={room}
+                    players={players}
+                    currentSong={currentSong}
+                    useMockData={false}
                 />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-2">
-                {currentSong.trackName}
-            </h3>
-            <p className="text-gray-400 text-lg mb-6">
-                {currentSong.artistName}
-            </p>
-            <div className="bg-green-900 rounded-lg p-4 mt-4">
-                <div className="text-spotify-green font-semibold">
-                    Esta canción le gusta a: {getPlayerName(players, currentSong.ownerUserId)}
+                {/*<div className="relative w-48 md:w-80 h-48 md:h-80 mx-auto">
+                    <img
+                        src={currentSong.coverUrl}
+                        alt={currentSong.trackName}
+                        className="w-48 md:w-80 h-48 md:h-80 rounded-lg shadow-lg"
+                    />
                 </div>
+                <h3 className="text-2xl md:text-4xl font-bold text-white mt-8 mb-2">
+                    {currentSong.trackName}
+                </h3>
+                <p className="md:text-2xl text-gray-400 text-lg mb-6">
+                    {currentSong.artistName}
+                </p>*/}
             </div>
         </div>
     );
