@@ -190,7 +190,6 @@ export default function RoomPage({ params }) {
         players={players}
         onBackToLobby={handleBackToLobby}
       />
-      <SpotifyLoginModal />
     </>
   );
 }
