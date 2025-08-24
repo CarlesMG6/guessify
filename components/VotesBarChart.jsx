@@ -139,7 +139,7 @@ const VotesBarChart = ({ room, players, currentSong, useMockData = false }) => {
 
                             {/* Bar */}
                             <div
-                                className={`w-12 md:w-20 rounded-t transition-all duration-500 ${data.isCorrect
+                                className={`w-12 md:w-28 rounded-t transition-all duration-500 ${data.isCorrect
                                         ? 'bg-green-500'
                                         : 'bg-gradient-to-t from-purple-600 to-pink-600'
                                     }`}
@@ -165,7 +165,7 @@ const VotesBarChart = ({ room, players, currentSong, useMockData = false }) => {
                                             className="w-full h-full rounded-full object-cover"
                                         />
                                     ) : (
-                                        <div className="w-full h-full bg-gray-500 rounded-full flex items-center justify-center">
+                                        <div className="w-full h-full bg-gray-500 flex items-center justify-center">
                                             <span className="text-white text-xs font-bold">
                                                 {data.playerName?.[0]?.toUpperCase() || '?'}
                                             </span>
@@ -174,7 +174,7 @@ const VotesBarChart = ({ room, players, currentSong, useMockData = false }) => {
                                 </div>
 
                                 {/* Player name */}
-                                <span className="text-gray-300 text-xs text-center max-w-12 md:max-w-20 truncate ">
+                                <span className="text-gray-300 text-xs text-center max-w-12 md:max-w-28 truncate ">
                                     {data.playerName}
                                 </span>
                             </div>
