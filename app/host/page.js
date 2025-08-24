@@ -36,6 +36,7 @@ export default function RoomPage() {
   };
 
   const handleCreateRoom = async () => {
+    console.log('Creating room...');
     if (!user) {
       setError('Debes estar autenticado para crear una sala');
       return;
@@ -163,8 +164,8 @@ export default function RoomPage() {
                 'Crear Sala'
               )}
             </button>
-                        <button
-              onClick={console.log('Join Room')}
+            <button
+              onClick={console.log('Config')}
               className="mt-4 w-80 bg-white text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-lg"
             >
               {loading ? (
