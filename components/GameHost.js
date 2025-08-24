@@ -447,9 +447,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
             
             <div className="space-y-4 mb-8">
               <div className="text-white">
-                <span className="text-gray-400">Room:</span> {room.codigo}
-              </div>
-              <div className="text-white">
                 <span className="text-gray-400">Jugadores:</span> {players.length}
               </div>
               <div className="text-white">
@@ -466,7 +463,29 @@ export default function GameHost({ room, players, onBackToLobby }) {
               </div>
             </div>
 
-            {playlist.length > 0 && (
+            <div className="flex space-x-4">
+              <button
+                onClick={startGame}
+                disabled={playlist.length === 0}
+                className="bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg"
+              >
+                ¡Empezar Juego!
+              </button>
+              <button
+                onClick={onBackToLobby}
+                className="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-6 rounded-lg"
+              >
+                Volver al Lobby
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /*
+  {playlist.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-white mb-4">Preview de Playlist</h3>
                 <div className="grid gap-2 max-h-40 overflow-y-auto">
@@ -491,27 +510,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
                 </div>
               </div>
             )}
-
-            <div className="flex space-x-4">
-              <button
-                onClick={startGame}
-                disabled={playlist.length === 0}
-                className="bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg"
-              >
-                ¡Empezar Juego!
-              </button>
-              <button
-                onClick={onBackToLobby}
-                className="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-6 rounded-lg"
-              >
-                Volver al Lobby
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  */
 
   if (gameState === 'playing' || gameStarted) {
     return (
@@ -565,16 +564,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
                       </>
                     )}
                     </div>
-
-                    {/* Host Controls */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  onClick={skipToNextPhase}
-                  className="bg-yellow-600 hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg"
-                >
-                  Saltar Fase
-                </button>
-              </div>
             </div>
 
 {/*

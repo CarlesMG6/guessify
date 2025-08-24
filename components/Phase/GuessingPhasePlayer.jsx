@@ -43,9 +43,12 @@ const GuessingPhasePlayer = ({ question, players, handleVote, hasVoted }) => {
                     </div>
                 ) : (
                     <>
-                        <h3 className="text-xl font-bold text-white mb-4 text-center">
-                            {question}
-                        </h3>
+                        {/*
+                            <h3 className="text-xl font-bold text-white mb-4 text-center">
+                                {question}
+                            </h3>
+                        */}
+
                         <div className="grid grid-cols-2 gap-3">
                             {players.map((player) => (
                                 <button
