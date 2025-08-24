@@ -116,6 +116,58 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async () => {
+    if (!isClient) return;
+    
+    try {
+      const { getAuth, signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
+      const { initializeApp } = await import('firebase/app');
+      
+      const firebaseConfig = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+      
+      // Request specific scopes
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      const result = await signInWithPopup(auth, provider);
+      
+      // Create or update user document in Firestore
+      if (result.user) {
+        try {
+          const { createUser } = await import('../lib/firestore');
+          await createUser({
+            id: result.user.uid,
+            isAnonymous: false,
+            nombre: result.user.displayName || `Usuario${result.user.uid.slice(-6)}`,
+            email: result.user.email,
+            imageUrl: result.user.photoURL,
+            spotifyId: null,
+            googleId: result.user.providerData[0]?.uid
+          });
+        } catch (error) {
+          // If user already exists, this will fail but it's not critical
+          console.log('User document might already exist:', error);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      throw error;
+    }
+  };
+
   const loginAnonymously = async () => {
     if (!isClient) return;
     
@@ -195,13 +247,14 @@ export const AuthProvider = ({ children }) => {
     spotifyUser,
     loading,
     loginAnonymously,
+    loginWithGoogle,
     logout,
     isClient
   };
 
   if (!isClient) {
     return (
-      <AuthContext.Provider value={{ user: null, spotifyUser: null, loading: true, isClient: false }}>
+      <AuthContext.Provider value={{ user: null, spotifyUser: null, loading: true, loginWithGoogle: async () => {}, isClient: false }}>
         {children}
       </AuthContext.Provider>
     );
