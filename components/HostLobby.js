@@ -57,10 +57,10 @@ export default function HostLobby({ room, players, role, onStartGame, user, spot
                     <div className="flex flex-col items-center flex-1">
                         <h1 className="text-7xl font-extrabold text-center text-primary mb-0">{room.id}</h1>
                         <p className="text-xl text-center mt-2">
-                            Accede a <span className="font-bold">guessify.vercel.app</span> e introduce este código
+                            Accede a <span className="font-bold">guessify-phi.vercel.app</span> e introduce este código
                         </p>
                     </div>
-                    <QRCode url={"https://guessify.vercel.app/join/" + room.id} size={160} />
+                    <QRCode url={"https://guessify-phi.vercel.app/join/" + room.id} size={160} />
                 </div>
             </div>
 
