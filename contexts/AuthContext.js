@@ -153,7 +153,7 @@ export const AuthProvider = ({ children }) => {
             email: result.user.email,
             imageUrl: result.user.photoURL,
             spotifyId: null,
-            googleId: result.user.providerData[0]?.uid
+            googleId: result.user.uid // Using Firebase Auth uid as googleId for direct queries
           });
         } catch (error) {
           // If user already exists, this will fail but it's not critical

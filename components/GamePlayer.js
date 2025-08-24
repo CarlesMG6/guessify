@@ -286,6 +286,9 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
               */}
             {(() => {
               const player = players.find(p => p.userId === user.uid);
+              console.log("Actual player: ",player);
+              console.log("User id: ",user.uid);
+              console.log("Players: ",players);
               return (
                 <div className=''>
                   <div className="w-16 absolute bottom-4 flex items-center justify-center text-white font-bold text-sm">
