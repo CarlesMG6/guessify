@@ -17,13 +17,22 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showGoogleLoginModal, setShowGoogleLoginModal] = useState(false);
+  const [showSpotifyModal, setShowSpotifyModal] = useState(false);
 
   useEffect(() => {
     // Show Google login modal if no user and client is ready
     if (isClient && !loading && !user) {
       setShowGoogleLoginModal(true);
+      setShowSpotifyModal(false);
     } else {
       setShowGoogleLoginModal(false);
+    }
+
+    // Show Spotify modal if user is logged in but no Spotify connection
+    if (isClient && !loading && user && !spotifyUser) {
+      setShowSpotifyModal(true);
+    } else if (user && spotifyUser) {
+      setShowSpotifyModal(false);
     }
 
     // Check for auto-join from URL
@@ -185,6 +194,53 @@ export default function Home() {
     );
   };
 
+  // Spotify Login Modal
+  const SpotifyLoginModal = () => {
+    if (!showSpotifyModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-spotify-dark rounded-xl p-6 max-w-md w-full mx-4 border border-spotify-gray">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-spotify-green mb-2">Conecta con Spotify</h2>
+            <p className="text-gray-300 mb-6">
+              Para jugar necesitas conectar tu cuenta de Spotify Premium y obtener tus canciones favoritas.
+            </p>
+
+            {error && (
+              <div className="bg-red-900 bg-opacity-30 border border-red-600 rounded-lg p-3 mb-4">
+                <p className="text-red-200 text-sm">{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <button
+                onClick={handleSpotifyLogin}
+                disabled={isLoading}
+                className="w-full bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-black border-t-transparent"></div>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.84-.179-.959-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.361 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.301.421-1.02.599-1.559.3z"/>
+                    </svg>
+                    <span>Conectar con Spotify</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-gray-400 text-xs mt-4">
+              Necesitas una cuenta de Spotify Premium para usar todas las funciones del juego.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!isClient || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
@@ -198,6 +254,57 @@ export default function Home() {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
         <GoogleLoginModal />
+      </div>
+    );
+  }
+
+  // Show Spotify modal if user is authenticated but not connected to Spotify
+  if (user && !spotifyUser) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-spotify-dark via-spotify-gray to-black">
+        <SpotifyLoginModal />
+        <div className="w-10/12 md:w-full max-w-lg mx-auto my-auto flex flex-col items-center justify-center">
+          <h1 className="text-6xl font-bold text-spotify-green">Guessify</h1>
+          {/* Join Form */}
+          <div className="w-full md:w-96 bg-spotify-gray rounded-2xl p-6 sm:p-8 shadow-2xl mt-8 opacity-50">
+            <form className="space-y-6">
+              {/* Room PIN Input */}
+              <div>
+                <label
+                  htmlFor="roomPin"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
+                  PIN de la Sala
+                </label>
+                <input
+                  id="roomPin"
+                  type="text"
+                  placeholder="Introduce el PIN"
+                  className="w-full px-4 py-3 bg-spotify-light-gray rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-spotify-green focus:border-transparent text-center text-lg font-mono tracking-wider"
+                  maxLength={6}
+                  disabled={true}
+                />
+              </div>
+
+              {/* Join Button */}
+              <button
+                type="button"
+                disabled={true}
+                className="w-full bg-gray-600 cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg text-lg"
+              >
+                Entrar
+              </button>
+            </form>
+          </div>
+
+          <h1 className="mt-16 text-gray-500">O bien crea una nueva partida</h1>
+          <button
+            disabled={true}
+            className="mt-4 w-80 bg-gray-600 cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg text-lg"
+          >
+            Crear Partida
+          </button>
+        </div>
       </div>
     );
   }

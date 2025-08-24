@@ -9,7 +9,6 @@ import {
   subscribeToPlayersUpdates,
   updateRoom
 } from '../../../lib/firestore';
-import { getSpotifyAuthUrl } from '../../../lib/spotify';
 import RoomLobby from '../../../components/RoomLobby';
 import GameHost from '../../../components/GameHost';
 import GamePlayer from '../../../components/GamePlayer';
@@ -23,7 +22,6 @@ export default function RoomPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [role, setRole] = useState('player'); // 'host' or 'player'
-  const [showSpotifyModal, setShowSpotifyModal] = useState(false);
 
   useEffect(() => {
     // Get role from URL params
@@ -34,14 +32,12 @@ export default function RoomPage({ params }) {
     }
   }, []);
 
-  // Check if user needs Spotify login
+  // Redirect to home if user doesn't have Spotify connected
   useEffect(() => {
     if (user && !spotifyUser && !loading) {
-      setShowSpotifyModal(true);
-    } else {
-      setShowSpotifyModal(false);
+      router.push('/');
     }
-  }, [user, spotifyUser, loading]);
+  }, [user, spotifyUser, loading, router]);
 
   useEffect(() => {
     if (!user || !roomId) return;
