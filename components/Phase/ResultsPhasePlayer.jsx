@@ -7,6 +7,20 @@ const ResultsPhasePlayer = ({ currentSong, question, room, players, votes }) => 
     const [userVote, setUserVote] = useState(null);
     const [userPosition, setUserPosition] = useState(null);
 
+    const funnyPhrases = [
+        "No por mucho madrugar amanece más temprano",
+        "Quien mucho corre, pronto para",
+        "A mal tiempo, buena cara",
+        "El que ríe último, ríe mejor",
+        "Quien no arriesga, no gana"
+    ];
+
+    const slowPhrases = [
+        "Más vale tarde que nunca",
+        "Vísteme despacio que tengo prisa",
+        "Despacito y buena letra"
+    ];
+
     useEffect(() => {
         // Find user's vote for current round
         if (votes && user?.uid && room.state?.currentRound !== undefined) {
@@ -44,7 +58,7 @@ const ResultsPhasePlayer = ({ currentSong, question, room, players, votes }) => 
                         <h2 className="text-2xl font-bold text-white mb-2">
                             {userVote.isCorrect ? 'Correcto' : 'Incorrecto'}
                         </h2>
-                        
+
                         {userVote.isCorrect && userVote.points > 0 && (
                             <div className="text-white text-xl font-semibold">
                                 +{userVote.points} puntos
@@ -64,7 +78,17 @@ const ResultsPhasePlayer = ({ currentSong, question, room, players, votes }) => 
 
                 {/* Position Information */}
                 {userPosition && (
-                    <div className="bg-spotify-gray p-4 rounded-lg">
+                    <div className=" p-4 rounded-lg">
+                        {userVote?.isCorrect && userVote.points < 200 && (
+                            <span className="italic text-lg text-gray-300 mb-4">
+                                {slowPhrases[Math.floor(Math.random() * slowPhrases.length)]}
+                            </span>
+                        )}
+                        {!userVote?.isCorrect && (
+                            <span className="italic text-lg text-gray-300 mb-4">
+                                {funnyPhrases[Math.floor(Math.random() * funnyPhrases.length)]}
+                            </span>
+                        )}
                         <p className="text-white text-lg">
                             Estás en <span className="font-bold text-spotify-green">{getPositionText(userPosition)}</span>
                         </p>

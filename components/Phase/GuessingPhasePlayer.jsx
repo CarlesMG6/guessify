@@ -40,11 +40,6 @@ const GuessingPhasePlayer = ({ question, players, handleVote, hasVoted }) => {
                         <span className="italic text-lg text-gray-300">
                             Espera al resto de jugadores...
                         </span>
-                        {/*
-                        <span className="italic text-lg text-gray-300">
-                            {funnyPhrases[Math.floor(Math.random() * funnyPhrases.length)]}
-                        </span>
-                        */}
                     </div>
                 ) : (
                     <>
