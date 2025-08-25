@@ -8,16 +8,18 @@ import CreateRoom from '../components/CreateRoom';
 import JoinRoom from '../components/JoinRoom';
 import UserProfile from '../components/UserProfile';
 import ClientOnly from '../components/ClientOnly';
+import { FaUser } from "react-icons/fa";
 
 export default function Home() {
   const router = useRouter();
-  const { user, spotifyUser, loading, loginAnonymously, loginWithGoogle, isClient } = useAuth();
+  const { user, spotifyUser, loading, loginAnonymously, loginWithGoogle, logout, isClient } = useAuth();
   const [view, setView] = useState('home'); // 'home', 'create', 'join'
   const [roomPin, setRoomPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showGoogleLoginModal, setShowGoogleLoginModal] = useState(false);
   const [showSpotifyModal, setShowSpotifyModal] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   useEffect(() => {
     // Show Google login modal if no user and client is ready
@@ -123,6 +125,73 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowUserDropdown(false);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  const toggleUserDropdown = () => {
+    setShowUserDropdown(!showUserDropdown);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserDropdown && !event.target.closest('.user-dropdown')) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserDropdown]);
+
+  // Header Component
+  const Header = () => {
+    return (
+      <header className="absolute top-0 left-0 right-0 z-40 p-4">
+        <div className="flex justify-end">
+          <div className="relative user-dropdown">
+            {user ? (
+              <div>
+                <button
+                  onClick={toggleUserDropdown}
+                  className="w-10 h-10 bg-spotify-green rounded-full flex items-center justify-center text-black font-bold text-lg hover:bg-green-600 transition-all duration-200 hover:scale-105 shadow-lg"
+                >
+                  {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                </button>
+                {showUserDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-spotify-dark border border-spotify-gray rounded-lg shadow-xl animate-fade-in">
+                    <div className="p-3 border-b border-spotify-gray">
+                      <p className="text-white font-semibold text-sm truncate">{user.displayName || 'Usuario'}</p>
+                      <p className="text-gray-400 text-xs truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-red-400 hover:bg-spotify-gray hover:text-red-300 transition-colors duration-200"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-gray-300 shadow-lg">
+                <FaUser className="text-sm" />
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+    );
   };
 
   // Google Login Modal
@@ -243,7 +312,8 @@ export default function Home() {
 
   if (!isClient || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center relative">
+        <Header />
         <div className="text-white text-xl">Cargando...</div>
       </div>
     );
@@ -261,7 +331,8 @@ export default function Home() {
   // Show Spotify modal if user is authenticated but not connected to Spotify
   if (user && !spotifyUser) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-spotify-dark via-spotify-gray to-black">
+      <div className="min-h-screen w-full bg-gradient-to-br from-spotify-dark via-spotify-gray to-black relative">
+        <Header />
         <SpotifyLoginModal />
         <div className="w-10/12 md:w-full max-w-lg mx-auto my-auto flex flex-col items-center justify-center">
           <h1 className="text-6xl font-bold text-spotify-green">Guessify</h1>
@@ -310,7 +381,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br flex from-spotify-dark via-spotify-gray to-black">
+    <div className="min-h-screen w-full bg-gradient-to-br flex from-spotify-dark via-spotify-gray to-black relative">
+      <Header />
       <div className="w-10/12 md:w-full max-w-lg mx-auto my-auto flex flex-col items-center justify-center">
         <h1 className="text-6xl font-bold text-spotify-green">Guessify</h1>
         {/* Join Form */}
