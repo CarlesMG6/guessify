@@ -55,7 +55,7 @@ export default function RoomPage() {
         hostPlaying: hostType === 'player'
       } : {
         numSongs: 10,
-        autoStart: false,
+        autoStart: true,
         delayStartTime: 5,
         timePerRound: 30,
         revealSongName: true,

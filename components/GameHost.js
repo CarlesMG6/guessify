@@ -718,7 +718,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         </div>
         
         {/* Timer Progress Bar */}
-        {phaseEndTime && room?.state?.phaseStartTime && (
+        {phaseEndTime && room?.state?.phaseStartTime && room?.config?.autoStart && roundPhase !== "finished" && (
           <div className="fixed bottom-4 left-0 right-0 z-40">
             <div className=" px-6 py-4">
               <div className="max-w-7xl flex-row flex mx-auto items-center justify-center">
