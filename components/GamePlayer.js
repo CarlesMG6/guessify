@@ -300,7 +300,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
               console.log("Players: ",players);
               return (
                 <div className=''>
-                  <div className="w-16 absolute flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-16 absolute bottom-2 flex items-center justify-center text-white font-bold text-sm">
                     {player?.avatar ? (
                       <img
                         src={`/img/playerImages/${player?.avatar}.png`}

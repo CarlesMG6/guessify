@@ -729,7 +729,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div 
-                    className="bg-gradient-to-r from-spotify-green to-green-400 h-2 rounded-full transition-all duration-1000 ease-linear"
+                    className="bg-gradient-to-r from-spotify-green to-green-400 h-2 rounded-full transition-all duration-500 ease-linear"
                     style={{ width: `${getTimerProgress()}%` }}
                   ></div>
                 </div>
