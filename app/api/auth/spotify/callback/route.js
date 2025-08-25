@@ -1,7 +1,8 @@
 import { spotifyConfig, spotifyEndpoints } from '../../../../../lib/spotify';
 
 export async function GET(request) {
-    const { searchParams } = new URL(request.url);
+  console.log("TEST PRINT")
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
