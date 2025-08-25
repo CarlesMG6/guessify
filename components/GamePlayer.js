@@ -300,17 +300,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
               console.log("Players: ",players);
               return (
                 <div className=''>
-                  <div className="w-16 absolute bottom-4 flex items-center justify-center text-white font-bold text-sm">
-                    {player?.avatar ? (
-                      <img
-                        src={`/img/playerImages/${player?.avatar}.png`}
-                        alt="Tu avatar"
-                        className="w-16 h-16 mx-auto"
-                      />
-                    ) : (
-                      <span>{player.nombre?.[0]?.toUpperCase() || '?'}</span>
-                    )}
-                  </div>
+                  
                   <div key={player.userId} className="flex justify-between text-sm h-6 ml-24 items-center">
                     <span className={'text-gray-300'}>
                       {player.nombre}
