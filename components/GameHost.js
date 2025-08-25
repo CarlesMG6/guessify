@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSpotifyPlayer } from '../hooks/useSpotifyPlayer';
 import { useCountdown } from '../hooks/useCountdown';
-import { getPlayerScore } from '../lib/gameHelpers';
+import { getPlayerScore, getVotesForCurrentRound } from '../lib/gameHelpers';
 import GuessingPhase from './Phase/GuessingPhase';
 import StandingsPhase from './Phase/StandingsPhase';
 import ResultsPhase from './Phase/ResultsPhase';
 import InitialPhase from './Phase/InitialPhase';
+import EndPhase from './Phase/EndPhase';
 
 export default function GameHost({ room, players, onBackToLobby }) {
   const { user, spotifyUser } = useAuth();
@@ -18,6 +19,9 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const [votes, setVotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Ref to prevent multiple auto-advances
+  const autoAdvanceRef = useRef(false);
 
   
   // Get state from room data
@@ -401,6 +405,40 @@ export default function GameHost({ room, players, onBackToLobby }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Auto-advance when all players have voted
+  useEffect(() => {
+    if (roundPhase === 'voting' && votes.length > 0 && players.length > 0 && !autoAdvanceRef.current) {
+      const currentRoundVotes = getVotesForCurrentRound(votes, currentRound);
+      
+      console.log('Vote check:', {
+        roundPhase,
+        currentRound,
+        totalPlayers: players.length,
+        votesThisRound: currentRoundVotes.length,
+        allVotes: votes.length,
+        autoAdvanceBlocked: autoAdvanceRef.current,
+        votes: currentRoundVotes.map(v => ({ voter: v.voterUserId, round: v.roundNumber }))
+      });
+      
+      // Check if all players have voted for this round
+      if (currentRoundVotes.length >= players.length) {
+        console.log('🎯 All players have voted! Auto-advancing to next phase in 1 second...');
+        autoAdvanceRef.current = true; // Prevent multiple calls
+        
+        // Add a small delay to ensure the vote is visible before advancing
+        setTimeout(() => {
+          console.log('⏭️ Executing auto-advance to next phase');
+          skipToNextPhase();
+        }, 1000);
+      }
+    }
+    
+    // Reset the ref when round phase changes away from voting
+    if (roundPhase !== 'voting') {
+      autoAdvanceRef.current = false;
+    }
+  }, [votes, players.length, currentRound, roundPhase, skipToNextPhase]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
@@ -559,6 +597,12 @@ export default function GameHost({ room, players, onBackToLobby }) {
                           useMockData={false}
                           skipToNextPhase={skipToNextPhase}
                           textSkip={"Siguiente"}
+                        />
+                      )}
+
+                      {roundPhase === 'finished' && (
+                        <EndPhase
+                          players={players}
                         />
                       )}
                       </>

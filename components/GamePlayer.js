@@ -8,6 +8,7 @@ import GuessingPhasePlayer from './Phase/GuessingPhasePlayer';
 import ResultsPhasePlayer from './Phase/ResultsPhasePlayer';
 import PointsPhasePlayer from './Phase/PointsPhasePlayer';
 import StandingsPhasePlayer from './Phase/StandingsPhasePlayer';
+import EndPhasePlayer from './Phase/EndPhasePlayer';
 
 export default function GamePlayer({ room, players, onBackToLobby }) {
   const { user } = useAuth();
@@ -223,12 +224,20 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                 />
               )}
 
-              {(roundPhase === 'results' || roundPhase === 'points' || roundPhase === 'standings') && (
+              {(roundPhase === 'results' || roundPhase === 'points' || roundPhase === 'standings' ) && (
                 <ResultsPhasePlayer
                   question={QUESTION}
                   room={room}
                   players={players}
                   currentSong={currentSong}
+                  votes={votes}
+                />
+              )}
+
+              {roundPhase === 'finished' && (
+                <EndPhasePlayer
+                  room={room}
+                  players={players}
                   votes={votes}
                 />
               )}

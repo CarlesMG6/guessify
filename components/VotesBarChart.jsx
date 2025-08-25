@@ -141,7 +141,7 @@ const VotesBarChart = ({ room, players, currentSong, useMockData = false }) => {
                             <div
                                 className={`w-12 md:w-28 rounded-t transition-all duration-500 ${data.isCorrect
                                         ? 'bg-green-500'
-                                        : 'bg-gradient-to-t from-purple-600 to-pink-600'
+                                        : 'bg-red-500'
                                     }`}
                                 style={{
                                     height: `${Math.max(barHeight, data.voteCount > 0 ? 20 : 4)}px`,
@@ -162,7 +162,7 @@ const VotesBarChart = ({ room, players, currentSong, useMockData = false }) => {
                                         <img
                                             src={`/img/playerImages/${data.avatar}.png`}
                                             alt={data.playerName}
-                                            className="w-full h-full rounded-full object-cover"
+                                            className="w-full h-full object-cover"
                                         />
                                     ) : (
                                         <div className="w-full h-full bg-gray-500 flex items-center justify-center">
