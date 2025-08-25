@@ -19,6 +19,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const [votes, setVotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [timerUpdate, setTimerUpdate] = useState(0); // Force timer updates
 
   // Ref to prevent multiple auto-advances
   const autoAdvanceRef = useRef(false);
@@ -73,7 +74,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         console.error('No song found at index:', currentRound);
       }
       newPhase = 'voting';
-      newPhaseEndTime = new Date(Date.now() + TIME_VOTING * 1000);
+      newPhaseEndTime = new Date(Date.now() + (!!room?.config?.timePerRound ? room?.config?.timePerRound * 1000 : TIME_VOTING * 1000));
     } else if (roundPhase === 'voting') {
       // Move to results phase (stop music)
       console.log('Moving to RESULTS phase');
@@ -126,6 +127,11 @@ export default function GameHost({ room, players, onBackToLobby }) {
     }
   }, [roundPhase, currentRound, currentSong, playlist.length, room.id]);
 
+  const skipToNextPhase = () => {
+    stopTimer();
+    nextPhase();
+  };
+
   // Initialize countdown timer
   const { secondsLeft: timeLeft, start: startTimer, stop: stopTimer, isRunning } = useCountdown(nextPhase);
   
@@ -143,22 +149,65 @@ export default function GameHost({ room, players, onBackToLobby }) {
     
     const interval = setInterval(() => {
       const now = Date.now();
-      const endTime = new Date(phaseEndTime).getTime();
-      
-      if (now >= endTime) {
-        nextPhase();
+      const endTime = new Date(phaseEndTime.seconds * 1000);
+
+      // Update timer display
+      setTimerUpdate(prev => prev + 1);
+
+      if (now >= endTime && !gameFinished) {
+        // Check if autoStart is enabled
+        if (room?.config?.autoStart) {
+          console.log('⏰ Auto-advancing phase due to timer (autoStart enabled)');
+          skipToNextPhase();
+        } else {
+          console.log('⏰ Timer expired but autoStart disabled, calling nextPhase');
+          nextPhase();
+        }
       }
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [phaseEndTime, nextPhase]);
+  }, [phaseEndTime, nextPhase, skipToNextPhase, room?.config?.autoStart]);
 
   // Calculate time left for display
   const getTimeLeft = () => {
     if (!phaseEndTime) return 0;
     const now = Date.now();
-    const endTime = new Date(phaseEndTime).getTime();
+    
+    // Handle Firestore timestamp format
+    const endTime = phaseEndTime.seconds 
+      ? new Date(phaseEndTime.seconds * 1000).getTime()
+      : new Date(phaseEndTime).getTime();
+    
     return Math.max(0, Math.floor((endTime - now) / 1000));
+  };
+
+  // Calculate progress for timer bar
+  const getTimerProgress = () => {
+    if (!phaseEndTime || !room?.state?.phaseStartTime) return 0;
+    
+    const now = Date.now();
+    
+    // Handle Firestore timestamp format
+    const startTime = room.state.phaseStartTime.seconds 
+      ? new Date(room.state.phaseStartTime.seconds * 1000).getTime()
+      : new Date(room.state.phaseStartTime).getTime();
+    
+    const endTime = phaseEndTime.seconds 
+      ? new Date(phaseEndTime.seconds * 1000).getTime()
+      : new Date(phaseEndTime).getTime();
+    
+    const totalDuration = endTime - startTime;
+    const elapsed = now - startTime;
+    
+    if (totalDuration <= 0) return 0;
+    return 100 - Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Load playlist and prepare game
@@ -217,6 +266,11 @@ export default function GameHost({ room, players, onBackToLobby }) {
     }
     
     console.log('Starting game with playlist:', playlist);
+    console.log('Game configuration:', {
+      autoStart: room?.config?.autoStart,
+      timePerRound: room?.config?.timePerRound,
+      numSongs: room?.config?.numSongs
+    });
     console.log('Playlist validation:');
     playlist.forEach((song, index) => {
       console.log(`Song ${index}:`, {
@@ -386,11 +440,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
     }
   };
 
-  const skipToNextPhase = () => {
-    stopTimer();
-    nextPhase();
-  };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -398,12 +447,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
       stopSong();
     };
   }, [stopTimer]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Auto-advance when all players have voted
   useEffect(() => {
@@ -492,6 +535,12 @@ export default function GameHost({ room, players, onBackToLobby }) {
               </div>
               <div className="text-white">
                 <span className="text-gray-400">Tiempo por ronda:</span> {room.config.timePerRound}s
+              </div>
+              <div className="text-white">
+                <span className="text-gray-400">Auto-avance:</span> 
+                <span className={`ml-2 ${room?.config?.autoStart ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {room?.config?.autoStart ? '✅ Habilitado' : '⏸️ Manual'}
+                </span>
               </div>
               <div className="text-white">
                 <span className="text-gray-400">Reproductor Spotify:</span> 
@@ -667,6 +716,27 @@ export default function GameHost({ room, players, onBackToLobby }) {
             */}
           </div>
         </div>
+        
+        {/* Timer Progress Bar */}
+        {phaseEndTime && room?.state?.phaseStartTime && (
+          <div className="fixed bottom-4 left-0 right-0 z-40">
+            <div className=" px-6 py-4">
+              <div className="max-w-7xl flex-row flex mx-auto items-center justify-center">
+                <div className="flex flex-col items-center justify-center mr-8">
+                  <div className="text-spotify-green font-mono font-bold text-2xl">
+                    {formatTime(getTimeLeft())}
+                  </div>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-spotify-green to-green-400 h-2 rounded-full transition-all duration-1000 ease-linear"
+                    style={{ width: `${getTimerProgress()}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -7,7 +7,7 @@ const EndPhase = ({ players }) => {
 
     return (
         <div className='h-full w-full flex items-center flex-col justify-center'>
-            <QuestionHeader question={"Resultados"}/>
+            <QuestionHeader question={"Resultados de partida"}/>
             <div className="flex flex-col items-center justify-center h-full mx-auto w-full max-w-3xl space-y-3">
                 {playersData
                     .sort((a, b) => {
