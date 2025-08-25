@@ -1,15 +1,13 @@
 import { spotifyConfig, spotifyEndpoints } from '../../../../../lib/spotify';
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const state = searchParams.get('state');
   const error = searchParams.get('error');
 
   if (error) {
     return Response.redirect(new URL(`/?error=${error}`, request.url));
   }
-
   if (!code) {
     return Response.redirect(new URL('/?error=no_code', request.url));
   }
@@ -19,34 +17,37 @@ export async function GET(request) {
     const tokenResponse = await fetch(spotifyEndpoints.token, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${spotifyConfig.clientId}:${spotifyConfig.clientSecret}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${spotifyConfig.clientId}:${spotifyConfig.clientSecret}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        code: code,
+        code,
         redirect_uri: spotifyConfig.redirectUri
       })
     });
 
-    if (!tokenResponse.ok) {
-      throw new Error('Failed to exchange code for token');
-    }
+    const rawToken = await tokenResponse.text();
+    console.log('Token exchange response:', rawToken);
 
-    const tokenData = await tokenResponse.json();
+    if (!tokenResponse.ok) {
+      throw new Error(`Failed to exchange code for token: ${rawToken}`);
+    }
+    const tokenData = JSON.parse(rawToken);
 
     // Get user profile
     const profileResponse = await fetch(spotifyEndpoints.userProfile, {
-      headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`
-      }
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
     });
 
+    const rawProfile = await profileResponse.text();
+    console.log('Profile response:', profileResponse.status, rawProfile);
+
     if (!profileResponse.ok) {
-      throw new Error('Failed to fetch user profile');
+      throw new Error(`Failed to fetch user profile: ${rawProfile}`);
     }
 
-    const profile = await profileResponse.json();
+    const profile = JSON.parse(rawProfile);
 
     // Get user's top tracks for different time ranges
     const topTracksPromises = ['short_term', 'medium_term', 'long_term'].map(async (timeRange) => {
