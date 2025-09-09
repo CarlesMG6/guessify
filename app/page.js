@@ -20,7 +20,6 @@ export default function Home() {
   const [showGoogleLoginModal, setShowGoogleLoginModal] = useState(false);
   const [showSpotifyModal, setShowSpotifyModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     // Show Google login modal if no user and client is ready
@@ -127,24 +126,6 @@ export default function Home() {
     setShowUserDropdown(!showUserDropdown);
   };
 
-  const handleSyncSpotifyData = async () => {
-    if (!user || !spotifyUser || isSyncing) return;
-    
-    try {
-      setIsSyncing(true);
-      console.log('🔄 Sincronizando datos de Spotify...');
-      
-      const { updateUserSpotifyData } = await import('../lib/firestore');
-      await updateUserSpotifyData(user.uid, spotifyUser);
-      
-      console.log('✅ Datos de Spotify sincronizados correctamente');
-    } catch (error) {
-      console.error('❌ Error sincronizando datos de Spotify:', error);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -163,58 +144,7 @@ export default function Home() {
   const Header = () => {
     return (
       <header className="absolute top-0 left-0 right-0 z-40 p-4">
-        <div className="flex justify-between items-start">
-          {/* Spotify Debug Info */}
-          {user && (
-            <div className="bg-black bg-opacity-50 rounded-lg p-3 text-xs text-white font-mono">
-              <div className="font-bold text-spotify-green mb-2">🎵 Spotify Debug</div>
-              <div className="space-y-1">
-                <div>
-                  <span className="text-gray-400">Logado:</span>{' '}
-                  <span className={spotifyUser ? 'text-green-400' : 'text-red-400'}>
-                    {spotifyUser ? 'true' : 'false'}
-                  </span>
-                </div>
-                {spotifyUser && (
-                  <>
-                    <div>
-                      <span className="text-gray-400">Usuario:</span>{' '}
-                      <span className="text-white">{spotifyUser.nombre || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Long:</span>{' '}
-                      <span className="text-spotify-green">{spotifyUser.topTracks_long?.length || 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Medium:</span>{' '}
-                      <span className="text-spotify-green">{spotifyUser.topTracks_medium?.length || 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Short:</span>{' '}
-                      <span className="text-spotify-green">{spotifyUser.topTracks_short?.length || 0}</span>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-gray-600">
-                      <button
-                        onClick={handleSyncSpotifyData}
-                        disabled={isSyncing}
-                        className="w-full bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-1 px-2 rounded text-xs transition-colors duration-200"
-                      >
-                        {isSyncing ? (
-                          <div className="flex items-center justify-center space-x-1">
-                            <div className="animate-spin rounded-full h-3 w-3 border border-black border-t-transparent"></div>
-                            <span>Sincronizando...</span>
-                          </div>
-                        ) : (
-                          '🔄 Sincronizar datos'
-                        )}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-          
+        <div className="flex justify-end">
           {/* User Profile Icon */}
           <div className="relative user-dropdown">
             {user ? (
