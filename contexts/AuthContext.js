@@ -151,7 +151,6 @@ export const AuthProvider = ({ children }) => {
             isAnonymous: false,
             nombre: result.user.displayName || `Usuario${result.user.uid.slice(-6)}`,
             email: result.user.email,
-            imageUrl: result.user.photoURL,
             spotifyId: null,
             googleId: result.user.uid // Using Firebase Auth uid as googleId for direct queries
           });

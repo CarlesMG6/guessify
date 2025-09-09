@@ -88,7 +88,6 @@ export async function GET(request) {
       spotifyId: profile.id,
       nombre: profile.display_name,
       email: profile.email,
-      imageUrl: profile.images[0]?.url,
       topTracks_short: topTracks.short_term || [],
       topTracks_medium: topTracks.medium_term || [],
       topTracks_long: topTracks.long_term || [],

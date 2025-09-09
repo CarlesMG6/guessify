@@ -10,13 +10,6 @@ export default function UserProfile({ user }) {
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-3">
-        {user.imageUrl && (
-          <img
-            src={user.imageUrl}
-            alt={user.nombre}
-            className="w-10 h-10 rounded-full border-2 border-spotify-green"
-          />
-        )}
         <div className="text-right">
           <p className="text-white font-medium">{user.nombre}</p>
           <p className="text-gray-400 text-sm">

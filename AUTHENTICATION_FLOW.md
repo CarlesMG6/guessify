@@ -15,7 +15,6 @@ Al hacer login con Google, se crea/actualiza el documento del usuario en la cole
   isAnonymous: false,
   nombre: user.displayName,
   email: user.email,
-  imageUrl: user.photoURL,
   spotifyId: null                  // Se llenará después del login de Spotify
 }
 ```
