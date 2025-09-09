@@ -12,7 +12,7 @@ import { FaUser } from "react-icons/fa";
 
 export default function Home() {
   const router = useRouter();
-  const { user, spotifyUser, loading, loginAnonymously, loginWithGoogle, logout, isClient } = useAuth();
+  const { user, spotifyUser, loading, loginWithGoogle, logout, isClient } = useAuth();
   const [view, setView] = useState('home'); // 'home', 'create', 'join'
   const [roomPin, setRoomPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,20 +58,6 @@ export default function Home() {
     } catch (error) {
       console.error('Error with Google login:', error);
       setError('Error al iniciar sesión con Google. Inténtalo de nuevo.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAnonymousLogin = async () => {
-    try {
-      setIsLoading(true);
-      setError('');
-      await loginAnonymously();
-      setShowGoogleLoginModal(false);
-    } catch (error) {
-      console.error('Error with anonymous login:', error);
-      setError('Error al iniciar sesión. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +144,43 @@ export default function Home() {
   const Header = () => {
     return (
       <header className="absolute top-0 left-0 right-0 z-40 p-4">
-        <div className="flex justify-end">
+        <div className="flex justify-between items-start">
+          {/* Spotify Debug Info */}
+          {user && (
+            <div className="bg-black bg-opacity-50 rounded-lg p-3 text-xs text-white font-mono">
+              <div className="font-bold text-spotify-green mb-2">🎵 Spotify Debug</div>
+              <div className="space-y-1">
+                <div>
+                  <span className="text-gray-400">Logado:</span>{' '}
+                  <span className={spotifyUser ? 'text-green-400' : 'text-red-400'}>
+                    {spotifyUser ? 'true' : 'false'}
+                  </span>
+                </div>
+                {spotifyUser && (
+                  <>
+                    <div>
+                      <span className="text-gray-400">Usuario:</span>{' '}
+                      <span className="text-white">{spotifyUser.nombre || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Long:</span>{' '}
+                      <span className="text-spotify-green">{spotifyUser.topTracks_long?.length || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Medium:</span>{' '}
+                      <span className="text-spotify-green">{spotifyUser.topTracks_medium?.length || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Short:</span>{' '}
+                      <span className="text-spotify-green">{spotifyUser.topTracks_short?.length || 0}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* User Profile Icon */}
           <div className="relative user-dropdown">
             {user ? (
               <div>
