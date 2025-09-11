@@ -78,7 +78,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
     } else if (roundPhase === 'voting') {
       // Move to results phase (stop music)
       console.log('Moving to RESULTS phase');
-      stopSong();
       calculateRoundResults(currentRound);
       newPhase = 'results';
       newPhaseEndTime = new Date(Date.now() + TIME_RESULTS * 1000);
@@ -91,6 +90,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
       // Next round or end game
       const nextRoundIndex = currentRound + 1;
       console.log('Moving to next song. Current round:', currentRound, 'Next round:', nextRoundIndex, 'Playlist length:', playlist.length);
+      stopSong();
       
       if (nextRoundIndex < playlist.length) {
         console.log('Starting next round with index:', nextRoundIndex);
@@ -231,16 +231,20 @@ export default function GameHost({ room, players, onBackToLobby }) {
     try {
       const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../lib/gameUtils');
       
-      // Get users with Spotify data
-      const usersForPlaylist = await getUsersForPlaylist(room.id);
+      // Get the term from room configuration
+      const term = room.config?.term || 'medium_term';
+      console.log('Using term for playlist generation:', term);
+      
+      // Get users with Spotify data for the specified term
+      const usersForPlaylist = await getUsersForPlaylist(room.id, term);
       
       if (usersForPlaylist.length === 0) {
-        setError('No hay jugadores con datos de Spotify para generar la playlist');
+        setError(`No hay jugadores con datos de Spotify para el período seleccionado (${term})`);
         return;
       }
       
-      // Generate playlist
-      const generatedPlaylist = generateGamePlaylist(usersForPlaylist, room.config.numSongs);
+      // Generate playlist with the specified term
+      const generatedPlaylist = generateGamePlaylist(usersForPlaylist, room.config.numSongs, term);
       const validation = validatePlaylistForGame(generatedPlaylist);
       
       if (!validation.hasEnoughTracks) {

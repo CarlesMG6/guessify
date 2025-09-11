@@ -22,7 +22,8 @@ export default function RoomPage() {
     autoStart: false,
     revealSongName: true,
     revealArtists: true,
-    revealCover: true
+    revealCover: true,
+    term: 'medium_term' // short_term, medium_term, long_term
   });
 
   // Redirect to home if user doesn't have Spotify connected
@@ -52,6 +53,7 @@ export default function RoomPage() {
         revealSongName: config.revealSongName,
         revealArtists: config.revealArtists,
         revealCover: config.revealCover,
+        term: config.term,
         hostPlaying: hostType === 'player'
       } : {
         numSongs: 10,
@@ -61,6 +63,7 @@ export default function RoomPage() {
         revealSongName: true,
         revealArtists: true,
         revealCover: true,
+        term: 'medium_term',
         hostPlaying: hostType === 'player'
       };
 
@@ -147,6 +150,46 @@ export default function RoomPage() {
                 />
                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-spotify-green"></div>
               </label>
+            </div>
+
+            {/* Time Period Selection */}
+            <div>
+              <label className="block text-white font-semibold mb-3">Canciones de:</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfig(prev => ({...prev, term: 'short_term'}))}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    config.term === 'short_term'
+                      ? 'bg-spotify-green text-black'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Último mes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfig(prev => ({...prev, term: 'medium_term'}))}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    config.term === 'medium_term'
+                      ? 'bg-spotify-green text-black'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Últimos 6 meses
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfig(prev => ({...prev, term: 'long_term'}))}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    config.term === 'long_term'
+                      ? 'bg-spotify-green text-black'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Último año
+                </button>
+              </div>
             </div>
 
             {/* Reveal Options */}
