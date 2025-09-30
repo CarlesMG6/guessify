@@ -34,7 +34,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   
   const TIME_PREPARATION = 5; // seconds for preparation phase
   const TIME_VOTING = 15; // seconds for voting phase
-  const TIME_RESULTS = 500; // seconds for results phase
+  const TIME_RESULTS = 5; // seconds for results phase
   const TIME_POINTS = 5; // seconds for scoring phase
 
   // Get Spotify token
