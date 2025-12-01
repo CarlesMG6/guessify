@@ -9,6 +9,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
             <QuestionHeader question={"Resultados"} skipToNextPhase={skipToNextPhase} textSkip={textSkip} />
 
             {currentSong && (
+                    <>
                     <div className="w-full max-w-4xl bg-spotify-gray rounded-xl p-6 mb-6 mt-20 flex items-center justify-between">
                         {/* Song Info Row */}
                         <div className="flex items-center space-x-8 flex-1">
@@ -63,11 +64,52 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                             </div>
                         </div>
                     </div>
+                    {currentSong.otherPlayersWithTrack && currentSong.otherPlayersWithTrack.length > 0 && (
+                    <div className="w-full max-w-4xl bg-spotify-gray rounded-xl p-6 mb-6 mt-6">    
+                        {/* Other Players Who Had This Track */}
+                        <h4 className="text-white font-semibold text-lg mb-4">También la han escuchado</h4>
+                        <div className="space-y-3">
+                            {currentSong.otherPlayersWithTrack.map((otherPlayer) => {
+                                const playerData = players.find(p => p.userId === otherPlayer.userId);
+                                return (
+                                    <div key={otherPlayer.userId} className="flex items-center space-x-4 bg-gray-700 rounded-lg p-3">
+                                        {/* Avatar */}
+                                        <div className="w-10 h-10 overflow-hidden flex-shrink-0">
+                                            {playerData?.avatar ? (
+                                                <img
+                                                    src={`/img/playerImages/${playerData.avatar}.png`}
+                                                    alt={otherPlayer.name}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.src = '/img/playerImages/gato.png';
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-spotify-green rounded-full flex items-center justify-center text-black font-bold text-sm">
+                                                    {otherPlayer.name?.charAt(0) || '?'}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Name */}
+                                        <span className="text-white font-medium">
+                                            {otherPlayer.name}
+                                        </span>
+                                        
+                                        {/* Position Text */}
+                                        <span className="text-gray-400 text-sm">
+                                            es su {otherPlayer.position}ª canción más escuchada
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    )}
+                    </>
                 )}
 
             <div className="flex flex-col items-center justify-center h-full w-full">
-                {/* Song Info with Correct Answer */}
-                
                 {/* Votes Bar Chart */}
                 <VotesBarChart
                     room={room}
@@ -75,19 +117,6 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                     currentSong={currentSong}
                     useMockData={false}
                 />
-                {/*<div className="relative w-48 md:w-80 h-48 md:h-80 mx-auto">
-                    <img
-                        src={currentSong.coverUrl}
-                        alt={currentSong.trackName}
-                        className="w-48 md:w-80 h-48 md:h-80 rounded-lg shadow-lg"
-                    />
-                </div>
-                <h3 className="text-2xl md:text-4xl font-bold text-white mt-8 mb-2">
-                    {currentSong.trackName}
-                </h3>
-                <p className="md:text-2xl text-gray-400 text-lg mb-6">
-                    {currentSong.artistName}
-                </p>*/}
             </div>
         </div>
     );
