@@ -90,6 +90,35 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
     }
   };
 
+  const handleLikeTrack = async (trackId) => {
+    if (!user?.spotifyAccessToken || !trackId) {
+      console.error('Missing access token or track ID');
+      return false;
+    }
+
+    try {
+      const response = await fetch('https://api.spotify.com/v1/me/tracks', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${user.spotifyAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: [trackId] }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to like track:', response.status);
+        return false;
+      }
+
+      console.log('Track liked successfully:', trackId);
+      return true;
+    } catch (error) {
+      console.error('Error liking track:', error);
+      return false;
+    }
+  };
+
   const handleVote = async (votedUserId) => {
     if (hasVoted) {
       setError('Ya has votado en esta ronda');
@@ -231,6 +260,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                   players={players}
                   currentSong={currentSong}
                   votes={votes}
+                  onLikeTrack={handleLikeTrack}
                 />
               )}
 
