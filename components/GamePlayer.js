@@ -11,7 +11,7 @@ import StandingsPhasePlayer from './Phase/StandingsPhasePlayer';
 import EndPhasePlayer from './Phase/EndPhasePlayer';
 
 export default function GamePlayer({ room, players, onBackToLobby }) {
-  const { user } = useAuth();
+  const { user, spotifyUser } = useAuth();
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [currentSong, setCurrentSong] = useState(null);
@@ -91,8 +91,14 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
   };
 
   const handleLikeTrack = async (trackId) => {
-    if (!user?.spotifyAccessToken || !trackId) {
-      console.error('Missing access token or track ID');
+    const accessToken = spotifyUser?.spotifyTokens?.access_token;
+    
+    if (!accessToken || !trackId) {
+      console.error('Missing access token or track ID', { 
+        hasToken: !!accessToken, 
+        hasTrackId: !!trackId,
+        spotifyUser: !!spotifyUser 
+      });
       return false;
     }
 
@@ -100,14 +106,15 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
       const response = await fetch('https://api.spotify.com/v1/me/tracks', {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${user.spotifyAccessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ ids: [trackId] }),
       });
 
       if (!response.ok) {
-        console.error('Failed to like track:', response.status);
+        const errorText = await response.text();
+        console.error('Failed to like track:', response.status, errorText);
         return false;
       }
 
