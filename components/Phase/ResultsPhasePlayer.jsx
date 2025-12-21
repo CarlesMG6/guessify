@@ -2,12 +2,14 @@ import { getPlayerName } from '../../lib/gameHelpers';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
-const ResultsPhasePlayer = ({ currentSong, question, room, players, votes, onLikeTrack }) => {
+const ResultsPhasePlayer = ({ currentSong, question, room, players, votes, onLikeTrack, onCheckIfLiked }) => {
     const { user } = useAuth();
     const [userVote, setUserVote] = useState(null);
     const [userPosition, setUserPosition] = useState(null);
     const [isLiked, setIsLiked] = useState(false);
     const [isLiking, setIsLiking] = useState(false);
+    const [wasAlreadyLiked, setWasAlreadyLiked] = useState(false);
+    const [isChecking, setIsChecking] = useState(true);
 
     const funnyPhrases = [
         "No por mucho madrugar amanece más temprano",
@@ -40,8 +42,23 @@ const ResultsPhasePlayer = ({ currentSong, question, room, players, votes, onLik
         }
     }, [votes, user?.uid, room.state?.currentRound, players]);
 
+    // Check if track is already liked when song changes
+    useEffect(() => {
+        const checkLikedStatus = async () => {
+            if (currentSong?.trackId && onCheckIfLiked) {
+                setIsChecking(true);
+                const alreadyLiked = await onCheckIfLiked(currentSong.trackId);
+                setWasAlreadyLiked(alreadyLiked);
+                setIsLiked(alreadyLiked);
+                setIsChecking(false);
+            }
+        };
+        
+        checkLikedStatus();
+    }, [currentSong?.trackId, onCheckIfLiked]);
+
     const handleLikeClick = async () => {
-        if (isLiking || !currentSong?.trackId) return;
+        if (isLiking || !currentSong?.trackId || wasAlreadyLiked) return;
         
         setIsLiking(true);
         const success = await onLikeTrack(currentSong.trackId);
@@ -112,35 +129,47 @@ const ResultsPhasePlayer = ({ currentSong, question, room, players, votes, onLik
                 )}
 
                 {/* Like Button */}
-                <button
-                    onClick={handleLikeClick}
-                    disabled={isLiking || isLiked}
-                    className={`mt-6 p-4 rounded-full transition-all duration-300 ${
-                        isLiked 
-                            ? 'bg-spotify-green scale-110' 
-                            : 'bg-gray-700 hover:bg-gray-600 hover:scale-105'
-                    } ${isLiking ? 'animate-pulse' : ''}`}
-                    aria-label="Me gusta esta canción"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        className={`w-8 h-8 transition-all duration-300 ${
-                            isLiked ? 'fill-black scale-125' : 'fill-white'
-                        } ${isLiking ? 'animate-bounce' : ''}`}
-                    >
-                        {isLiked ? (
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        ) : (
-                            <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                {!isChecking && (
+                    <>
+                        <button
+                            onClick={handleLikeClick}
+                            disabled={isLiking || isLiked || wasAlreadyLiked}
+                            className={`mt-6 p-4 rounded-full transition-all duration-300 ${
+                                isLiked 
+                                    ? 'bg-spotify-green scale-110' 
+                                    : wasAlreadyLiked
+                                    ? 'bg-gray-600 cursor-not-allowed'
+                                    : 'bg-gray-700 hover:bg-gray-600 hover:scale-105'
+                            } ${isLiking ? 'animate-pulse' : ''}`}
+                            aria-label="Me gusta esta canción"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                className={`w-8 h-8 transition-all duration-300 ${
+                                    isLiked ? 'fill-black scale-125' : 'fill-white'
+                                } ${isLiking ? 'animate-bounce' : ''}`}
+                            >
+                                {isLiked || wasAlreadyLiked ? (
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                ) : (
+                                    <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                                )}
+                            </svg>
+                        </button>
+                        
+                        {wasAlreadyLiked && (
+                            <p className="mt-2 text-sm text-gray-400 font-semibold animate-fade-in">
+                                Ya está en tus Me gusta
+                            </p>
                         )}
-                    </svg>
-                </button>
-                
-                {isLiked && (
-                    <p className="mt-2 text-sm text-spotify-green font-semibold animate-fade-in">
-                        ¡Añadida a tus Me gusta!
-                    </p>
+                        
+                        {isLiked && !wasAlreadyLiked && (
+                            <p className="mt-2 text-sm text-spotify-green font-semibold animate-fade-in">
+                                ¡Añadida a tus Me gusta!
+                            </p>
+                        )}
+                    </>
                 )}
             </div>
         </div>
