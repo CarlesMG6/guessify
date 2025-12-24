@@ -686,7 +686,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
                       vote => vote.voterUserId === player.userId
                     );
                     const hasVoted = playerVotes.length > 0;
-                    const playerScore = getPlayerScore(players, scores, player.userId);
+                    const playerScore = player.score || 0;
                     
                     return (
                       <div
@@ -776,8 +776,8 @@ export default function GameHost({ room, players, onBackToLobby }) {
    */
   if (gameState === 'final_results') {
     const sortedPlayers = [...players].sort((a, b) => {
-      const scoreA = getPlayerScore(players, a.userId);
-      const scoreB = getPlayerScore(players, b.userId);
+      const scoreA = a.score || 0;
+      const scoreB = b.score || 0;
       return scoreB - scoreA;
     });
     return (
@@ -790,7 +790,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
             <div className="space-y-4 mb-8">
               {sortedPlayers.map((player, index) => {
-                const playerScore = getPlayerScore(players, player.userId);
+                const playerScore = player.score || 0;
                 return (
                   <div
                     key={player.userId}

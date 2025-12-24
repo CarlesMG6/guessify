@@ -3,7 +3,7 @@ import QuestionHeader from "../QuestionHeader";
 
 const EndPhase = ({ players }) => {
 
-    const playersData = players;
+    const playersData = Array.isArray(players) ? players : [];
 
     return (
         <div className='h-full w-full flex items-center flex-col justify-center'>

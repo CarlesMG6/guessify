@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getPlayerScore } from '../lib/gameHelpers';
 import InitialPhasePlayer from './Phase/InitialPhasePlayer';
 import GuessingPhasePlayer from './Phase/GuessingPhasePlayer';
 import ResultsPhasePlayer from './Phase/ResultsPhasePlayer';
@@ -320,7 +319,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
 
               <div className="space-y-4 mb-8">
                 {players
-                  .sort((a, b) => getPlayerScore(b.userId) - getPlayerScore(a.userId))
+                  .sort((a, b) => (b.score || 0) - (a.score || 0))
                   .map((player, index) => (
                     <div key={player.userId} className={`p-4 rounded-lg ${index === 0 ? 'bg-yellow-600' :
                       index === 1 ? 'bg-gray-400' :
@@ -332,7 +331,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                           {player.userId === user.uid && ' (Tú)'}
                         </span>
                         <span className="text-white text-xl font-bold">
-                          {getPlayerScore(player.userId)} pts
+                          {player.score || 0} pts
                         </span>
                       </div>
                     </div>

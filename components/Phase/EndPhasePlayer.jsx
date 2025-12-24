@@ -9,7 +9,7 @@ const EndPhasePlayer = ({room, players, votes }) => {
 
     useEffect(() => {
         // Find user's vote for current round
-        if (votes && user?.uid && room.state?.currentRound !== undefined) {
+        if (Array.isArray(votes) && user?.uid && room.state?.currentRound !== undefined) {
             const currentUserVote = votes.find(
                 vote => vote.voterUserId === user.uid && vote.roundNumber === room.state.currentRound
             );
@@ -17,7 +17,7 @@ const EndPhasePlayer = ({room, players, votes }) => {
         }
 
         // Calculate user's position in leaderboard
-        if (players && players.length > 0 && user?.uid) {
+        if (Array.isArray(players) && players.length > 0 && user?.uid) {
             const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
             const position = sortedPlayers.findIndex(player => player.userId === user.uid) + 1;
             setUserPosition(position);
