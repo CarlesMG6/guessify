@@ -305,6 +305,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                   room={room}
                   players={players}
                   votes={votes}
+                  onBackToLobby={onBackToLobby}
                 />
               )}
             </>
