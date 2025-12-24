@@ -656,6 +656,8 @@ export default function GameHost({ room, players, onBackToLobby }) {
                       {roundPhase === 'finished' && (
                         <EndPhase
                           players={players}
+                          room={room}
+                          onRestartGame={prepareGame}
                         />
                       )}
                       </>
