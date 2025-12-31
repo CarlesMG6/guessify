@@ -299,53 +299,11 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                   onCheckIfLiked={checkIfTrackIsLiked}
                 />
               )}
-
-              {/* {roundPhase === 'finished' && (
-                <EndPhasePlayer
-                  room={room}
-                  players={players}
-                  votes={votes}
-                  onBackToLobby={onBackToLobby}
-                />
-              )} */}
             </>
           )}
 
           {/* Final Results */}
           {isFinished && (
-            // <div className="bg-spotify-gray rounded-lg p-8 text-center">
-            //   <h2 className="text-3xl font-bold text-white mb-6">
-            //     🏆 ¡Juego Terminado!
-            //   </h2>
-
-            //   <div className="space-y-4 mb-8">
-            //     {players
-            //       .sort((a, b) => (b.score || 0) - (a.score || 0))
-            //       .map((player, index) => (
-            //         <div key={player.userId} className={`p-4 rounded-lg ${index === 0 ? 'bg-yellow-600' :
-            //           index === 1 ? 'bg-gray-400' :
-            //             index === 2 ? 'bg-orange-600' : 'bg-gray-600'
-            //           }`}>
-            //           <div className="flex justify-between items-center">
-            //             <span className="text-white font-semibold">
-            //               {index + 1}. {player.nombre}
-            //               {player.userId === user.uid && ' (Tú)'}
-            //             </span>
-            //             <span className="text-white text-xl font-bold">
-            //               {player.score || 0} pts
-            //             </span>
-            //           </div>
-            //         </div>
-            //       ))}
-            //   </div>
-
-            //   <button
-            //     onClick={onBackToLobby}
-            //     className="bg-spotify-green hover:bg-green-600 text-black font-semibold py-3 px-8 rounded-lg"
-            //   >
-            //     Volver al Lobby
-            //   </button>
-            // </div>
             <EndPhasePlayer
               room={room}
               players={players}
