@@ -6,8 +6,7 @@ const EndPhasePlayer = ({room, players, votes, onBackToLobby }) => {
     const { user } = useAuth();
     const [userPosition, setUserPosition] = useState(null);
     const [userScore, setUserScore] = useState(0);
-    const [mostKnownPlayer, setMostKnownPlayer] = useState(null);
-    const [leastKnownPlayer, setLeastKnownPlayer] = useState(null);
+    const [rankedPlayers, setRankedPlayers] = useState([]);
     const [songs, setSongs] = useState([]);
 
     // Load songs from room
@@ -106,27 +105,17 @@ const EndPhasePlayer = ({room, players, votes, onBackToLobby }) => {
             return;
         }
 
-        // Find player with most points (most known)
-        const mostKnown = playersWithSongs.reduce((max, current) => 
-            current.totalPoints > max.totalPoints ? current : max
-        );
-        
-        // Find player with least points (least known)
-        const leastKnown = playersWithSongs.reduce((min, current) => 
-            current.totalPoints < min.totalPoints ? current : min
-        );
+        // Sort players by total points (descending)
+        const sortedPlayers = playersWithSongs.sort((a, b) => b.totalPoints - a.totalPoints);
 
-        // Calculate percentages
-        mostKnown.successRate = mostKnown.totalSongs > 0 
-            ? Math.round((mostKnown.correctVotes / mostKnown.totalSongs) * 100) 
-            : 0;
-        
-        leastKnown.successRate = leastKnown.totalSongs > 0 
-            ? Math.round((leastKnown.correctVotes / leastKnown.totalSongs) * 100) 
-            : 0;
+        // Calculate success rate for each player
+        sortedPlayers.forEach(player => {
+            player.successRate = player.totalSongs > 0 
+                ? Math.round((player.correctVotes / player.totalSongs) * 100) 
+                : 0;
+        });
 
-        setMostKnownPlayer(mostKnown);
-        setLeastKnownPlayer(leastKnown);
+        setRankedPlayers(sortedPlayers);
 
     }, [votes, songs, players, user?.uid]);
 
@@ -210,89 +199,53 @@ const EndPhasePlayer = ({room, players, votes, onBackToLobby }) => {
                     </div>
                 )}
                 {/* Statistics Section */}
-                {(mostKnownPlayer || leastKnownPlayer) && (
-                    <div className="w-full space-y-4">
-                        {/* Most Known Player */}
-                        {mostKnownPlayer && (
-                            <div className="bg-spotify-gray p-6 rounded-lg">
-                                <h3 className="text-spotify-green text-xl font-bold mb-4 text-center">
-                                    A quien conoces más
-                                </h3>
+                {rankedPlayers.length > 0 && (
+                    <div className="w-full space-y-3">
+                        <h3 className="text-spotify-green text-xl font-bold mb-4 text-center">
+                            Puntos ganados por jugador
+                        </h3>
+                        {rankedPlayers.map((player, index) => (
+                            <div key={player.userId} className="bg-spotify-gray p-4 rounded-lg">
                                 <div className="flex items-center space-x-4">
+                                    {/* Rank Number */}
+                                    <div className="flex-shrink-0 w-8 text-center">
+                                        <span className="text-white text-lg font-bold">
+                                            {index + 1}
+                                        </span>
+                                    </div>
+                                    
                                     {/* Avatar */}
                                     <div className="flex-shrink-0">
-                                        {mostKnownPlayer.avatar ? (
+                                        {player.avatar ? (
                                             <img
-                                                src={`/img/playerImages/${mostKnownPlayer.avatar}.png`}
-                                                alt={mostKnownPlayer.nombre}
-                                                className="w-16 h-16 rounded-full"
+                                                src={`/img/playerImages/${player.avatar}.png`}
+                                                alt={player.nombre}
+                                                className="w-12 h-12 rounded-full"
                                             />
                                         ) : (
-                                            <div className="w-16 h-16 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl font-bold">
-                                                {mostKnownPlayer.nombre?.[0]?.toUpperCase() || '?'}
+                                            <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center text-white text-xl font-bold">
+                                                {player.nombre?.[0]?.toUpperCase() || '?'}
                                             </div>
                                         )}
                                     </div>
                                     
                                     {/* Player Info */}
                                     <div className="flex-grow">
-                                        <p className="text-white text-lg font-semibold">
-                                            {mostKnownPlayer.nombre}
+                                        <p className="text-white text-base font-semibold">
+                                            {player.nombre}
                                         </p>
-                                        <div className="text-gray-300 text-sm mt-1 space-y-1">
-                                            <p>
-                                                🎯 {mostKnownPlayer.successRate}% de acierto 
-                                                <span className="text-gray-400"> ({mostKnownPlayer.correctVotes}/{mostKnownPlayer.totalSongs} canciones)</span>
-                                            </p>
-                                            <p>
-                                                ⭐ {mostKnownPlayer.totalPoints} puntos conseguidos
-                                            </p>
+                                        <div className="text-gray-300 text-sm mt-1">
+                                            <span className="mr-3">
+                                                🎯 {player.correctVotes}/{player.totalSongs}
+                                            </span>
+                                            <span>
+                                                ⭐ {player.totalPoints} pts
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        )}
-
-                        {/* Least Known Player */}
-                        {leastKnownPlayer && mostKnownPlayer?.userId !== leastKnownPlayer?.userId && (
-                            <div className="bg-spotify-gray p-6 rounded-lg">
-                                <h3 className="text-red-400 text-xl font-bold mb-4 text-center">
-                                    A quien conoces menos
-                                </h3>
-                                <div className="flex items-center space-x-4">
-                                    {/* Avatar */}
-                                    <div className="flex-shrink-0">
-                                        {leastKnownPlayer.avatar ? (
-                                            <img
-                                                src={`/img/playerImages/${leastKnownPlayer.avatar}.png`}
-                                                alt={leastKnownPlayer.nombre}
-                                                className="w-16 h-16 rounded-full"
-                                            />
-                                        ) : (
-                                            <div className="w-16 h-16 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl font-bold">
-                                                {leastKnownPlayer.nombre?.[0]?.toUpperCase() || '?'}
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Player Info */}
-                                    <div className="flex-grow">
-                                        <p className="text-white text-lg font-semibold">
-                                            {leastKnownPlayer.nombre}
-                                        </p>
-                                        <div className="text-gray-300 text-sm mt-1 space-y-1">
-                                            <p>
-                                                🎯 {leastKnownPlayer.successRate}% de acierto 
-                                                <span className="text-gray-400"> ({leastKnownPlayer.correctVotes}/{leastKnownPlayer.totalSongs} canciones)</span>
-                                            </p>
-                                            <p>
-                                                ⭐ {leastKnownPlayer.totalPoints} puntos conseguidos
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        ))}
                     </div>
                 )}
                 {/* Exit Button */}
