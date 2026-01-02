@@ -1,9 +1,91 @@
 
+import { useState, useEffect } from 'react';
 import { getPlayerName } from '../../lib/gameHelpers';
 import QuestionHeader from '../QuestionHeader';
 import VotesBarChart from '../VotesBarChart';
 
 const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, textSkip }) => {
+    const [votes, setVotes] = useState([]);
+    const [roundPoints, setRoundPoints] = useState({});
+    const [streakInfo, setStreakInfo] = useState({});
+    const [showAnimation, setShowAnimation] = useState(false);
+    const [animatedPlayers, setAnimatedPlayers] = useState([]);
+    const [fastestPlayer, setFastestPlayer] = useState(null);
+
+    // Load votes for current round
+    useEffect(() => {
+        const loadVotes = async () => {
+            if (!room?.id || room.state?.currentRound === undefined) return;
+            
+            try {
+                const { getVotesForRound } = await import('../../lib/firestore');
+                const roundVotes = await getVotesForRound(room.id, room.state.currentRound);
+                setVotes(roundVotes);
+
+                // Calculate points gained this round
+                const pointsThisRound = {};
+                const streakData = {};
+                let maxPoints = 0;
+                let fastest = null;
+
+                roundVotes.forEach(vote => {
+                    if (vote.isCorrect && vote.points > 0) {
+                        pointsThisRound[vote.voterUserId] = (pointsThisRound[vote.voterUserId] || 0) + vote.points;
+                        
+                        // Store streak information
+                        if (vote.streakCount >= 4 && vote.streakBonus > 0) {
+                            streakData[vote.voterUserId] = {
+                                count: vote.streakCount,
+                                bonus: vote.streakBonus
+                            };
+                        }
+                        
+                        // Track fastest player (most points)
+                        if (pointsThisRound[vote.voterUserId] > maxPoints) {
+                            maxPoints = pointsThisRound[vote.voterUserId];
+                            fastest = vote.voterUserId;
+                        }
+                    }
+                });
+
+                setRoundPoints(pointsThisRound);
+                setStreakInfo(streakData);
+                setFastestPlayer(fastest);
+
+                // Initialize animated players with current order
+                const playersWithPoints = players.map(p => ({
+                    ...p,
+                    roundPoints: pointsThisRound[p.userId] || 0,
+                    streakCount: streakData[p.userId]?.count || 0,
+                    streakBonus: streakData[p.userId]?.bonus || 0,
+                    previousScore: p.score - (pointsThisRound[p.userId] || 0),
+                    newScore: p.score
+                }));
+                setAnimatedPlayers(playersWithPoints);
+
+                // Start animation sequence
+                setTimeout(() => setShowAnimation(true), 500);
+            } catch (error) {
+                console.error('Error loading votes:', error);
+            }
+        };
+
+        loadVotes();
+    }, [room?.id, room?.state?.currentRound, players]);
+
+    // Handle reordering after animation
+    useEffect(() => {
+        if (!showAnimation) return;
+
+        const timer = setTimeout(() => {
+            // Sort players by new score
+            const sorted = [...animatedPlayers].sort((a, b) => b.newScore - a.newScore);
+            setAnimatedPlayers(sorted);
+        }, 2000); // Wait for points animation to complete
+
+        return () => clearTimeout(timer);
+    }, [showAnimation]);
+
     return (
         <div className='h-full w-full flex items-center flex-col justify-center'>
             <QuestionHeader question={"Resultados"} skipToNextPhase={skipToNextPhase} textSkip={textSkip} />
@@ -110,6 +192,84 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                 )}
 
             <div className="flex flex-col items-center justify-center h-full w-full">
+                {/* Fastest Player Badge */}
+                {fastestPlayer && (
+                    <div className="mb-4 bg-yellow-500 text-black px-6 py-3 rounded-full font-bold text-lg shadow-lg">
+                        ⚡ El más rápido: {getPlayerName(players, fastestPlayer)}
+                    </div>
+                )}
+
+                {/* Player Rankings with Score Animation */}
+                {animatedPlayers.length > 0 && (
+                    <div className="w-full max-w-2xl mb-6 space-y-2">
+                        {animatedPlayers.map((player, index) => (
+                            <div
+                                key={player.userId}
+                                className="bg-spotify-gray rounded-lg p-4 transition-all duration-700 ease-in-out"
+                                style={{
+                                    transform: `translateY(${index * 100}%)`,
+                                }}
+                            >
+                                <div className="flex items-center justify-between">
+                                    {/* Left: Position + Avatar + Name */}
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-white font-bold text-xl w-8">
+                                            {index + 1}
+                                        </span>
+                                        
+                                        {player.avatar ? (
+                                            <img
+                                                src={`/img/playerImages/${player.avatar}.png`}
+                                                alt={player.nombre}
+                                                className="w-10 h-10 rounded-full"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold">
+                                                {player.nombre?.[0]?.toUpperCase() || '?'}
+                                            </div>
+                                        )}
+                                        
+                                        <span className="text-white font-semibold">
+                                            {player.nombre}
+                                        </span>
+                                    </div>
+
+                                    {/* Right: Score with animation */}
+                                    <div className="flex items-center space-x-2 relative">
+                                        {/* Streak bonus badge */}
+                                        {player.streakCount >= 4 && (
+                                            <div className="flex flex-col items-end mr-2">
+                                                <span className="text-yellow-400 text-xs font-semibold">
+                                                    🔥 Racha de {player.streakCount}
+                                                </span>
+                                                <span className="text-yellow-400 text-sm font-bold">
+                                                    +{player.streakBonus}
+                                                </span>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Points gained this round */}
+                                        {player.roundPoints > 0 && (
+                                            <span
+                                                className={`text-green-400 font-bold transition-all duration-1000 ${
+                                                    showAnimation ? 'opacity-0 -translate-x-20' : 'opacity-100'
+                                                }`}
+                                            >
+                                                +{player.roundPoints}
+                                            </span>
+                                        )}
+                                        
+                                        {/* Total score */}
+                                        <span className="text-white font-bold text-xl">
+                                            {showAnimation ? player.newScore : player.previousScore} pts
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {/* Votes Bar Chart */}
                 <VotesBarChart
                     room={room}
