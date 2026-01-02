@@ -64,7 +64,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                 setAnimatedPlayers(playersWithPoints);
 
                 // Start animation sequence
-                setTimeout(() => setShowAnimation(true), 500);
+                setTimeout(() => setShowAnimation(true), 1000); // Aumentado de 500ms a 1000ms
             } catch (error) {
                 console.error('Error loading votes:', error);
             }
@@ -81,7 +81,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
             // Sort players by new score
             const sorted = [...animatedPlayers].sort((a, b) => b.newScore - a.newScore);
             setAnimatedPlayers(sorted);
-        }, 2000); // Wait for points animation to complete
+        }, 3500); // Aumentado de 2000ms a 3500ms para dar más tiempo a la animación de puntos
 
         return () => clearTimeout(timer);
     }, [showAnimation]);
@@ -205,7 +205,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                         {animatedPlayers.map((player, index) => (
                             <div
                                 key={player.userId}
-                                className="bg-spotify-gray rounded-lg p-4 transition-all duration-700 ease-in-out"
+                                className="bg-spotify-gray rounded-lg p-4 transition-all duration-1000 ease-in-out"
                                 style={{
                                     transform: `translateY(${index * 100}%)`,
                                 }}
@@ -251,7 +251,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                                         {/* Points gained this round */}
                                         {player.roundPoints > 0 && (
                                             <span
-                                                className={`text-green-400 font-bold transition-all duration-1000 ${
+                                                className={`text-green-400 font-bold transition-all duration-2000 ${
                                                     showAnimation ? 'opacity-0 -translate-x-20' : 'opacity-100'
                                                 }`}
                                             >

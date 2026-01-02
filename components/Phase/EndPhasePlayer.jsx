@@ -164,7 +164,6 @@ const EndPhasePlayer = ({room, players, votes, onBackToLobby }) => {
 
     return (
         <div className="h-full w-full flex items-center flex-col justify-center">
-            <QuestionHeader question={"Resultados de partida"}/>
             
             <div className="flex flex-col items-center justify-center h-full mx-auto w-full max-w-2xl space-y-6">
                 {/* Position Card */}
@@ -176,21 +175,21 @@ const EndPhasePlayer = ({room, players, votes, onBackToLobby }) => {
                     }`}>
                         <div className="flex flex-col items-center space-y-4">
                             {/* Medal/Position */}
-                            <div className={`text-7xl ${
+                            <div className={`text-3xl ${
                                 userPosition <= 3 ? 'filter ' + styles.textShadow : ''
                             }`}>
                                 {getMedalEmoji(userPosition)}
                             </div>
                             
                             {/* Position Text */}
-                            <div className={`text-3xl font-bold ${
+                            <div className={`text-xl font-bold ${
                                 userPosition <= 3 ? 'text-white filter ' + styles.textShadow : 'text-white'
                             }`}>
                                 {getPositionText(userPosition)}
                             </div>
                             
                             {/* Score */}
-                            <div className={`text-4xl font-bold ${
+                            <div className={`text-2xl font-bold ${
                                 userPosition <= 3 ? 'text-white filter ' + styles.textShadow : 'text-white'
                             }`}>
                                 {userScore} pts
