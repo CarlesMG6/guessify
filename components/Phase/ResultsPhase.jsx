@@ -192,13 +192,6 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                 )}
 
             <div className="flex flex-col items-center justify-center h-full w-full">
-                {/* Fastest Player Badge */}
-                {fastestPlayer && (
-                    <div className="mb-4 bg-yellow-500 text-black px-6 py-3 rounded-full font-bold text-lg shadow-lg">
-                        ⚡ El más rápido: {getPlayerName(players, fastestPlayer)}
-                    </div>
-                )}
-
                 {/* Player Rankings with Score Animation */}
                 {animatedPlayers.length > 0 && (
                     <div className="w-full max-w-2xl mb-6 space-y-2">
@@ -236,6 +229,15 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
 
                                     {/* Right: Score with animation */}
                                     <div className="flex items-center space-x-2 relative">
+                                        {/* Fastest player indicator */}
+                                        {fastestPlayer === player.userId && (
+                                            <div className="mr-2">
+                                                <span className="text-yellow-400 text-2xl">
+                                                    ⚡
+                                                </span>
+                                            </div>
+                                        )}
+                                        
                                         {/* Streak bonus badge */}
                                         {player.streakCount >= 4 && (
                                             <div className="flex flex-col items-end mr-2">
