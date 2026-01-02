@@ -1,6 +1,6 @@
 import { getPlayerScore } from "../../lib/gameHelpers";
 import QuestionHeader from "../QuestionHeader";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const EndPhase = ({ players, room, onRestartGame }) => {
 
@@ -8,6 +8,7 @@ const EndPhase = ({ players, room, onRestartGame }) => {
     const [showConfigModal, setShowConfigModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [visiblePlayers, setVisiblePlayers] = useState([]);
     
     // Configuration state - initialize with current room config
     const [config, setConfig] = useState({
@@ -19,6 +20,35 @@ const EndPhase = ({ players, room, onRestartGame }) => {
         revealCover: room?.config?.revealCover ?? true,
         term: room?.config?.term || 'medium_term'
     });
+
+    // Sort players by score
+    const sortedPlayers = playersData.sort((a, b) => {
+        return getPlayerScore(players, b.userId) - getPlayerScore(players, a.userId);
+    });
+
+    // Animation effect: show players one by one from last to first
+    useEffect(() => {
+        if (sortedPlayers.length === 0) return;
+
+        // Clear visible players
+        setVisiblePlayers([]);
+
+        // Show players from last to first with 0.5s delay
+        const totalPlayers = sortedPlayers.length;
+        const timers = [];
+
+        for (let i = totalPlayers - 1; i >= 0; i--) {
+            const delay = (totalPlayers - 1 - i) * 500; // 0.5s = 500ms
+            const timer = setTimeout(() => {
+                setVisiblePlayers(prev => [sortedPlayers[i], ...prev]);
+            }, delay);
+            timers.push(timer);
+        }
+
+        return () => {
+            timers.forEach(timer => clearTimeout(timer));
+        };
+    }, [playersData.length]); // Re-run if player count changes
 
     const handlePlayAgain = async () => {
         setLoading(true);
@@ -337,6 +367,24 @@ const EndPhase = ({ players, room, onRestartGame }) => {
                     cursor: pointer;
                     border: 2px solid #1db954;
                 }
+
+                @keyframes pulse-scale {
+                    0% {
+                        transform: scale(0.8);
+                        opacity: 0;
+                    }
+                    50% {
+                        transform: scale(1.05);
+                    }
+                    100% {
+                        transform: scale(1);
+                        opacity: 1;
+                    }
+                }
+
+                .player-appear {
+                    animation: pulse-scale 0.5s ease-out forwards;
+                }
             `}</style>
             <div className='h-full w-full flex items-center flex-col justify-center'>
                 <QuestionHeader question={"Resultados de partida"}/>
@@ -348,24 +396,23 @@ const EndPhase = ({ players, room, onRestartGame }) => {
                 )}
                 
                 <div className="flex flex-col items-center justify-center h-full mx-auto w-full max-w-3xl space-y-3">
-                    {playersData
-                        .sort((a, b) => {
-                            return getPlayerScore(players, b.userId) - getPlayerScore(players, a.userId);
-                        })
-                        .map((player, index) => {
+                    {visiblePlayers.map((player, index) => {
+                            // Find actual index in sorted array for proper medal display
+                            const actualIndex = sortedPlayers.findIndex(p => p.userId === player.userId);
+                            
                             // Define realistic medal colors with gradients and shadows
                             let bgClasses = '';
                             let textShadow = '';
                             
-                            if (index === 0) {
+                            if (actualIndex === 0) {
                                 // Gold - Gradient with warm gold tones and shimmer effect
                                 bgClasses = 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/50';
                                 textShadow = 'drop-shadow-lg';
-                            } else if (index === 1) {
+                            } else if (actualIndex === 1) {
                                 // Silver - Cool metallic silver with shine
                                 bgClasses = 'bg-gradient-to-r from-gray-300 via-gray-400 to-gray-500 shadow-lg shadow-gray-400/50';
                                 textShadow = 'drop-shadow-lg';
-                            } else if (index === 2) {
+                            } else if (actualIndex === 2) {
                                 // Bronze - Warm bronze tones with copper highlights
                                 bgClasses = 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 shadow-lg shadow-amber-600/50';
                                 textShadow = 'drop-shadow-lg';
@@ -375,15 +422,18 @@ const EndPhase = ({ players, room, onRestartGame }) => {
                             }
                             
                             return (
-                                <div key={player.userId} className={`flex justify-between w-full items-center p-4 rounded-lg border transition-all duration-300 hover:scale-105 ${bgClasses} ${
-                                    index < 3 ? 'border-white border-opacity-30' : 'border-gray-500'
-                                }`}>
+                                <div 
+                                    key={player.userId} 
+                                    className={`player-appear flex justify-between w-full items-center p-4 rounded-lg border transition-all duration-300 hover:scale-105 ${bgClasses} ${
+                                        actualIndex < 3 ? 'border-white border-opacity-30' : 'border-gray-500'
+                                    }`}
+                                >
                                     <span className={`font-semibold flex items-center ${
-                                        index < 3 ? 'text-white filter ' + textShadow : 'text-white'
+                                        actualIndex < 3 ? 'text-white filter ' + textShadow : 'text-white'
                                     }`}>
                                         <span className="w-12 text-2xl flex items-center justify-center">
                                             <div className="mx-auto">
-                                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
+                                            {actualIndex === 0 ? '🥇' : actualIndex === 1 ? '🥈' : actualIndex === 2 ? '🥉' : `${actualIndex + 1}`}
                                             </div>
                                         </span>
                                         <div className="ml-3 text-xl">
@@ -391,7 +441,7 @@ const EndPhase = ({ players, room, onRestartGame }) => {
                                         </div>
                                     </span>
                                     <span className={`text-xl font-bold ${
-                                        index < 3 ? 'text-white filter ' + textShadow : 'text-white'
+                                        actualIndex < 3 ? 'text-white filter ' + textShadow : 'text-white'
                                     }`}>
                                         {getPlayerScore(players, player.userId)} pts
                                     </span>
