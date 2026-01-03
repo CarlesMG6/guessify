@@ -342,7 +342,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                       <span>{player.nombre?.[0]?.toUpperCase() || '?'}</span>
                     )}
                   </div>
-                  <div key={player.userId} className="flex justify-between text-sm h-8 ml-24 items-center">
+                  <div key={player.userId} className="flex flex-grow justify-between text-sm h-8 ml-24 items-center">
                     <span className={'text-gray-300'}>
                       {player.nombre}
                     </span>
