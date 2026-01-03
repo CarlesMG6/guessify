@@ -13,7 +13,7 @@ import EndPhase from './Phase/EndPhase';
 
 export default function GameHost({ room, players, onBackToLobby }) {
   const { user, spotifyUser } = useAuth();
-  const [gameState, setGameState] = useState('preparing'); // preparing, playing, final_results
+  const [gameState, setGameState] = useState('preparation'); // preparation, playing, final_results
   const [currentSong, setCurrentSong] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [votes, setVotes] = useState([]);
@@ -257,8 +257,10 @@ export default function GameHost({ room, players, onBackToLobby }) {
       setPlaylist(validation.validTracks);
       console.log('Playlist generada:', validation.validTracks);
 
+      startGame();
+
     } catch (error) {
-      console.error('Error preparing game:', error);
+      console.error('Error in game preparation:', error);
       setError('Error al preparar el juego: ' + error.message);
     } finally {
       setLoading(false);
@@ -525,54 +527,10 @@ export default function GameHost({ room, players, onBackToLobby }) {
     );
   }
 
-  if (gameState === 'preparing' || !gameStarted) {
+  if (gameState === 'preparation' || !gameStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-spotify-gray rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-white mb-6">¿Listo para empezar?</h2>
-
-            <div className="space-y-4 mb-8">
-              <div className="text-white">
-                <span className="text-gray-400">Jugadores:</span> {players.length}
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Canciones:</span> {playlist.length}
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Tiempo por ronda:</span> {room.config.timePerRound}s
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Auto-avance:</span>
-                <span className={`ml-2 ${room?.config?.autoStart ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {room?.config?.autoStart ? '✅ Habilitado' : '⏸️ Manual'}
-                </span>
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Reproductor Spotify:</span>
-                <span className={`ml-2 ${playerReady ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {playerReady ? '✅ Conectado' : '⏳ Conectando...'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex space-x-4">
-              <button
-                onClick={startGame}
-                disabled={playlist.length === 0}
-                className="bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg"
-              >
-                ¡Empezar Juego!
-              </button>
-              <button
-                onClick={onBackToLobby}
-                className="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-6 rounded-lg"
-              >
-                Volver al Lobby
-              </button>
-            </div>
-          </div>
-        </div>
+      <div>
+        Loading...
       </div>
     );
   }
