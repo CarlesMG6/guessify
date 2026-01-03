@@ -176,7 +176,6 @@ export default function RoomPage({ params }) {
       <HostLobby 
         room={room}
         players={players}
-        role={role}
         onStartGame={startGame}
         user={user}
         spotifyUser={spotifyUser}

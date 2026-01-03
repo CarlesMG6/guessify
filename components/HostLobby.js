@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { addPlayerToRoom, removePlayerFromRoom } from '../lib/firestore';
 import { IoClose } from 'react-icons/io5';
 
-export default function HostLobby({ room, players, role, onStartGame, user, spotifyUser }) {
+export default function HostLobby({ room, players, onStartGame, user, spotifyUser }) {
     const [playerName, setPlayerName] = useState(spotifyUser?.nombre || '');
     const [joining, setJoining] = useState(false);
     const [error, setError] = useState('');
 
     const isPlayerInRoom = players.some(player => player.userId === user?.uid);
-    const canStart = players.length >= 1 && role === 'host';
+    const canStart = players.length >= 1;
 
     const handleJoinAsPlayer = async () => {
         if (!user || !spotifyUser || !playerName.trim()) {
