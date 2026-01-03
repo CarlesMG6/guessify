@@ -331,7 +331,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
               console.log("Players: ",players);
               return (
                 <div className='flex flex-row items-start'>
-                  <div className="w-16 flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-8 flex items-center justify-center text-white font-bold text-sm">
                     {player?.avatar ? (
                       <img
                         src={`/img/playerImages/${player?.avatar}.png`}
@@ -342,7 +342,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                       <span>{player.nombre?.[0]?.toUpperCase() || '?'}</span>
                     )}
                   </div>
-                  <div key={player.userId} className="flex justify-between text-sm h-6 ml-24 items-center">
+                  <div key={player.userId} className="flex justify-between text-sm h-8 ml-24 items-center">
                     <span className={'text-gray-300'}>
                       {player.nombre}
                     </span>
