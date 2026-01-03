@@ -64,7 +64,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                 setAnimatedPlayers(playersWithPoints);
 
                 // Start animation sequence
-                setTimeout(() => setShowAnimation(true), 1000); // Aumentado de 500ms a 1000ms
+                setTimeout(() => setShowAnimation(true), 2000); // Mostrar puntos durante 2 segundos antes de animar
             } catch (error) {
                 console.error('Error loading votes:', error);
             }
@@ -81,7 +81,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
             // Sort players by new score
             const sorted = [...animatedPlayers].sort((a, b) => b.newScore - a.newScore);
             setAnimatedPlayers(sorted);
-        }, 3500); // Aumentado de 2000ms a 3500ms para dar más tiempo a la animación de puntos
+        }, 5000); // Tiempo total: 2s de espera + 3s de animación
 
         return () => clearTimeout(timer);
     }, [showAnimation]);
@@ -253,8 +253,8 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                                         {/* Points gained this round */}
                                         {player.roundPoints > 0 && (
                                             <span
-                                                className={`text-green-400 font-bold transition-all duration-2000 ${
-                                                    showAnimation ? 'opacity-0 -translate-x-20' : 'opacity-100'
+                                                className={`text-green-400 font-bold transition-all duration-[3000ms] ${
+                                                    showAnimation ? 'opacity-0 translate-x-20' : 'opacity-100'
                                                 }`}
                                             >
                                                 +{player.roundPoints}

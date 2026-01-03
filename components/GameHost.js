@@ -538,8 +538,10 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
   if (gameState === 'preparation' || !gameStarted) {
     return (
-      <div>
-        Loading...
+      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-spotify-green mx-auto"></div>
+        </div>
       </div>
     );
   }
