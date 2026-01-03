@@ -227,8 +227,9 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
   useEffect(() => {
     console.log("Starting game with playlist:", playlist);
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    startGame();
+    new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
+      startGame();
+    });
   }, [playlist]);
 
   const prepareGame = async () => {
