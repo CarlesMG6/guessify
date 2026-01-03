@@ -2,10 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { addPlayerToRoom, updatePlayerProfile } from '../lib/firestore';
-import { RiResetRightFill } from "react-icons/ri";
+import { IoChevronBackCircle, IoChevronForwardCircle } from "react-icons/io5";
 
 
 export default function RoomLobby({ room, players, role, onStartGame, user, spotifyUser }) {
+  // Lista de avatares disponibles
+  const availableAvatars = [
+    'activista', 'ambulancia', 'aventura', 'avion', 'campana', 'cangrejo',
+    'ciclista', 'ciclocross', 'dia-antiterrorista', 'duende', 'excursionista',
+    'fusion-de-un-reactor', 'gato', 'helicoptero', 'hockey-sobre-hielo',
+    'hombre', 'hombre-joven', 'jugador-de-hockey-sobre-hielo', 'jugador',
+    'la-carretera', 'lectura', 'nino', 'obrero', 'perro', 'polo-acuatico',
+    'presidente', 'reportero', 'sari', 'senderismo', 'serpentina',
+    'sobrecarga-sensorial', 'somnoliento', 'sueno-de-gato', 'sueno-del-bebe',
+    'sueno-del-perro'
+  ];
+
   const [playerName, setPlayerName] = useState(spotifyUser?.nombre || '');
   const [joining, setJoining] = useState(true);
   const [error, setError] = useState('');
@@ -71,19 +83,25 @@ export default function RoomLobby({ room, players, role, onStartGame, user, spot
     }
   };
 
-  const randomizeAvatar = () => {
-    // Lista de avatares disponibles basada en las imágenes en playerImages
-    const availableAvatars = [
-      'activista', 'ambulancia', 'aventura', 'avion', 'campana', 'cangrejo',
-      'ciclista', 'ciclocross', 'dia-antiterrorista', 'duende', 'excursionista',
-      'fusion-de-un-reactor', 'gato', 'helicoptero', 'hockey-sobre-hielo',
-      'hombre', 'hombre-joven', 'jugador-de-hockey-sobre-hielo', 'jugador',
-      'la-carretera', 'lectura', 'nino', 'obrero', 'perro', 'polo-acuatico',
-      'presidente', 'reportero', 'sari', 'senderismo', 'serpentina',
-      'sobrecarga-sensorial', 'somnoliento', 'sueno-de-gato', 'sueno-del-bebe',
-      'sueno-del-perro'
-    ];
+  const nextAvatar = () => {
+    const currentIndex = availableAvatars.indexOf(selectedAvatar);
+    const nextIndex = (currentIndex + 1) % availableAvatars.length;
+    setSelectedAvatar(availableAvatars[nextIndex]);
+  };
 
+  const previousAvatar = () => {
+    const currentIndex = availableAvatars.indexOf(selectedAvatar);
+    const previousIndex = currentIndex === 0 ? availableAvatars.length - 1 : currentIndex - 1;
+    setSelectedAvatar(availableAvatars[previousIndex]);
+  };
+
+  const handleEditProfile = () => {
+    setPlayerName(currentPlayer?.nombre || '');
+    setSelectedAvatar(currentPlayer?.avatar || 'gato');
+    setShowProfileModal(true);
+  };
+
+  const randomizeAvatar = () => {
     const randomIndex = Math.floor(Math.random() * availableAvatars.length);
     setSelectedAvatar(availableAvatars[randomIndex]);
   };
@@ -114,12 +132,23 @@ export default function RoomLobby({ room, players, role, onStartGame, user, spot
                   e.target.src = '/img/playerImages/ciclista.png'; // Fallback
                 }}
               />
+              
+              {/* Botón flecha izquierda */}
               <button
-                onClick={randomizeAvatar}
-                className="absolute -bottom-6 -right-10 bg-spotify-green text-black rounded-full w-12 h-12 flex items-center justify-center hover:bg-green-400 transition-colors"
-                title="Cambiar avatar"
+                onClick={previousAvatar}
+                className="absolute top-1/2 -translate-y-1/2 -left-16 text-spotify-green hover:text-green-400 transition-colors"
+                title="Avatar anterior"
               >
-                <RiResetRightFill size={22} />
+                <IoChevronBackCircle size={40} />
+              </button>
+              
+              {/* Botón flecha derecha */}
+              <button
+                onClick={nextAvatar}
+                className="absolute top-1/2 -translate-y-1/2 -right-16 text-spotify-green hover:text-green-400 transition-colors"
+                title="Avatar siguiente"
+              >
+                <IoChevronForwardCircle size={40} />
               </button>
             </div>
           </div>
@@ -170,8 +199,17 @@ export default function RoomLobby({ room, players, role, onStartGame, user, spot
             }}
           />
           <h3 className="text-xl font-bold text-white mb-4">{currentPlayer?.nombre}</h3>
+          
+          {/* Botón de editar perfil */}
+          <button
+            onClick={handleEditProfile}
+            className="mb-6 bg-spotify-gray text-white font-medium py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors border border-gray-600"
+          >
+            Editar perfil
+          </button>
+
           <p className="text-white text-md mt-8">
-            Te has unido! Espera a que empiece la partida...
+            Todo listo! Espera a que empiece la partida...
           </p>
 
         </div>
