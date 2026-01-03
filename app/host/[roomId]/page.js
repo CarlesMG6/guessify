@@ -103,46 +103,49 @@ export default function RoomPage({ params }) {
     if (!room) return;
 
     try {
+      await updateRoom(roomId, {
+        'state.started': true,
+        'state.currentRound': 0
       // Preparar el juego: generar playlist
-      const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../../../lib/gameUtils');
-      const { startGame: startGameInDB, updateGameState } = await import('../../../lib/firestore');
+      // const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../../../lib/gameUtils');
+      // const { startGame: startGameInDB, updateGameState } = await import('../../../lib/firestore');
       
-      // Get the term from room configuration
-      const term = room.config?.term || 'medium_term';
-      console.log('Using term for playlist generation:', term);
+      // // Get the term from room configuration
+      // const term = room.config?.term || 'medium_term';
+      // console.log('Using term for playlist generation:', term);
       
-      // Get users with Spotify data for the specified term
-      const usersForPlaylist = await getUsersForPlaylist(room.id, term);
+      // // Get users with Spotify data for the specified term
+      // const usersForPlaylist = await getUsersForPlaylist(room.id, term);
       
-      if (usersForPlaylist.length === 0) {
-        setError(`No hay jugadores con datos de Spotify para el período seleccionado (${term})`);
-        return;
-      }
+      // if (usersForPlaylist.length === 0) {
+      //   setError(`No hay jugadores con datos de Spotify para el período seleccionado (${term})`);
+      //   return;
+      // }
       
-      // Generate playlist with the specified term
-      const generatedPlaylist = generateGamePlaylist(usersForPlaylist, room.config.numSongs, term);
-      const validation = validatePlaylistForGame(generatedPlaylist);
+      // // Generate playlist with the specified term
+      // const generatedPlaylist = generateGamePlaylist(usersForPlaylist, room.config.numSongs, term);
+      // const validation = validatePlaylistForGame(generatedPlaylist);
       
-      if (!validation.hasEnoughTracks) {
-        setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${room.config.numSongs} necesarias.`);
-        return;
-      }
+      // if (!validation.hasEnoughTracks) {
+      //   setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${room.config.numSongs} necesarias.`);
+      //   return;
+      // }
       
-      console.log('Playlist generada:', validation.validTracks);
+      // console.log('Playlist generada:', validation.validTracks);
       
-      // Start game in database with the generated playlist
-      await startGameInDB(room.id, validation.validTracks);
+      // // Start game in database with the generated playlist
+      // await startGameInDB(room.id, validation.validTracks);
       
-      const TIME_PREPARATION = 5; // seconds for preparation phase
+      // const TIME_PREPARATION = 5; // seconds for preparation phase
       
-      // Initialize game state
-      await updateGameState(room.id, {
-        started: true,
-        finished: false,
-        currentRound: 0,
-        currentPhase: 'preparing',
-        phaseEndTime: new Date(Date.now() + TIME_PREPARATION * 1000),
-        phaseStartTime: new Date()
+      // // Initialize game state
+      // await updateGameState(room.id, {
+      //   started: true,
+      //   finished: false,
+      //   currentRound: 0,
+      //   currentPhase: 'preparing',
+      //   phaseEndTime: new Date(Date.now() + TIME_PREPARATION * 1000),
+      //   phaseStartTime: new Date()
       });
       
     } catch (error) {

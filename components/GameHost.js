@@ -13,6 +13,7 @@ import EndPhase from './Phase/EndPhase';
 
 export default function GameHost({ room, players, onBackToLobby }) {
   const { user, spotifyUser } = useAuth();
+  const [gameState, setGameState] = useState('preparing'); // preparing, playing, final_results
   const [currentSong, setCurrentSong] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [votes, setVotes] = useState([]);
@@ -23,14 +24,14 @@ export default function GameHost({ room, players, onBackToLobby }) {
   // Ref to prevent multiple auto-advances
   const autoAdvanceRef = useRef(false);
 
-  
+
   // Get state from room data
   const currentRound = room?.state?.currentRound || 0;
   const roundPhase = room?.state?.currentPhase || 'preparing';
   const gameStarted = room?.state?.started || false;
   const gameFinished = room?.state?.finished || false;
   const phaseEndTime = room?.state?.phaseEndTime || null;
-  
+
   const TIME_PREPARATION = 5; // seconds for preparation phase
   const TIME_VOTING = 15; // seconds for voting phase
   const TIME_RESULTS = 5; // seconds for results phase
@@ -38,7 +39,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
   // Get Spotify token
   const spotifyToken = spotifyUser?.spotifyTokens?.access_token;
-  
+
   // Initialize Spotify Player
   const {
     isReady: playerReady,
@@ -48,7 +49,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
     pause: pauseTrack,
     resume: resumeTrack
   } = useSpotifyPlayer(spotifyToken);
-  
+
   const audioRef = useRef(null); // Keep for fallback
 
   const nextPhase = useCallback(async () => {
@@ -58,11 +59,11 @@ export default function GameHost({ room, players, onBackToLobby }) {
       currentSong: currentSong?.trackName,
       playlistLength: playlist.length
     });
-    
+
     let newPhase = roundPhase;
     let newRound = currentRound;
     let newPhaseEndTime = null;
-    
+
     if (roundPhase === 'preparing') {
       // Move to voting phase (with music playing)
       console.log('Moving to VOTING phase');
@@ -110,7 +111,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         return;
       }
     }
-    
+
     const newPhaseStartTime = new Date();
     // Update game state in database
     try {
@@ -133,7 +134,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
   // Initialize countdown timer
   const { secondsLeft: timeLeft, start: startTimer, stop: stopTimer, isRunning } = useCountdown(nextPhase);
-  
+
   // Set current song based on current round
   useEffect(() => {
     if (playlist.length > 0 && currentRound < playlist.length) {
@@ -145,7 +146,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   // Handle phase timer based on phaseEndTime
   useEffect(() => {
     if (!phaseEndTime) return;
-    
+
     const interval = setInterval(() => {
       const now = Date.now();
       const endTime = new Date(phaseEndTime.seconds * 1000);
@@ -164,7 +165,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         }
       }
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [phaseEndTime, nextPhase, skipToNextPhase, room?.config?.autoStart]);
 
@@ -172,33 +173,33 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const getTimeLeft = () => {
     if (!phaseEndTime) return 0;
     const now = Date.now();
-    
+
     // Handle Firestore timestamp format
-    const endTime = phaseEndTime.seconds 
+    const endTime = phaseEndTime.seconds
       ? new Date(phaseEndTime.seconds * 1000).getTime()
       : new Date(phaseEndTime).getTime();
-    
+
     return Math.max(0, Math.floor((endTime - now) / 1000));
   };
 
   // Calculate progress for timer bar
   const getTimerProgress = () => {
     if (!phaseEndTime || !room?.state?.phaseStartTime) return 0;
-    
+
     const now = Date.now();
-    
+
     // Handle Firestore timestamp format
-    const startTime = room.state.phaseStartTime.seconds 
+    const startTime = room.state.phaseStartTime.seconds
       ? new Date(room.state.phaseStartTime.seconds * 1000).getTime()
       : new Date(room.state.phaseStartTime).getTime();
-    
-    const endTime = phaseEndTime.seconds 
+
+    const endTime = phaseEndTime.seconds
       ? new Date(phaseEndTime.seconds * 1000).getTime()
       : new Date(phaseEndTime).getTime();
-    
+
     const totalDuration = endTime - startTime;
     const elapsed = now - startTime;
-    
+
     if (totalDuration <= 0) return 0;
     return 100 - Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
   };
@@ -228,34 +229,34 @@ export default function GameHost({ room, players, onBackToLobby }) {
     console.log('Preparing game for room:', room.id);
     setLoading(true);
     setError('');
-    
+
     try {
-      const { getSongsInRoom, subscribeToVotesUpdates } = await import('../lib/firestore');
-      
-      // Get the playlist from the room (already generated when game started)
-      const roomPlaylist = await getSongsInRoom(room.id);
-      
-      if (!roomPlaylist || roomPlaylist.length === 0) {
-        setError('No se encontró la playlist del juego');
+      const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../lib/gameUtils');
+
+      // Get the term from room configuration
+      const term = room.config?.term || 'medium_term';
+      console.log('Using term for playlist generation:', term);
+
+      // Get users with Spotify data for the specified term
+      const usersForPlaylist = await getUsersForPlaylist(room.id, term);
+
+      if (usersForPlaylist.length === 0) {
+        setError(`No hay jugadores con datos de Spotify para el período seleccionado (${term})`);
         return;
       }
-      
-      setPlaylist(roomPlaylist);
-      console.log('Playlist cargada:', roomPlaylist);
-      
-      // Subscribe to votes
-      const unsubscribeVotes = await subscribeToVotesUpdates(room.id, (snapshot) => {
-        const votesData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setVotes(votesData);
-      });
-      
-      return () => {
-        if (unsubscribeVotes) unsubscribeVotes();
-      };
-      
+
+      // Generate playlist with the specified term
+      const generatedPlaylist = generateGamePlaylist(usersForPlaylist, room.config.numSongs, term);
+      const validation = validatePlaylistForGame(generatedPlaylist);
+
+      if (!validation.hasEnoughTracks) {
+        setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${room.config.numSongs} necesarias.`);
+        return;
+      }
+
+      setPlaylist(validation.validTracks);
+      console.log('Playlist generada:', validation.validTracks);
+
     } catch (error) {
       console.error('Error preparing game:', error);
       setError('Error al preparar el juego: ' + error.message);
@@ -264,15 +265,74 @@ export default function GameHost({ room, players, onBackToLobby }) {
     }
   };
 
+  const startGame = async () => {
+    if (playlist.length === 0) {
+      setError('No hay playlist disponible');
+      return;
+    }
+
+    console.log('Starting game with playlist:', playlist);
+    console.log('Game configuration:', {
+      autoStart: room?.config?.autoStart,
+      timePerRound: room?.config?.timePerRound,
+      numSongs: room?.config?.numSongs
+    });
+    console.log('Playlist validation:');
+    playlist.forEach((song, index) => {
+      console.log(`Song ${index}:`, {
+        trackId: song.trackId,
+        trackName: song.trackName,
+        artistName: song.artistName,
+        hasTrackId: !!song.trackId
+      });
+    });
+
+    try {
+      const { startGame: startGameInDB, subscribeToVotesUpdates, updateGameState } = await import('../lib/firestore');
+
+      // Start game in database
+      await startGameInDB(room.id, playlist);
+
+      // Initialize game state
+      await updateGameState(room.id, {
+        started: true,
+        finished: false,
+        currentRound: 0,
+        currentPhase: 'preparing',
+        phaseEndTime: new Date(Date.now() + TIME_PREPARATION * 1000)
+      });
+
+      // Subscribe to votes
+      const unsubscribeVotes = await subscribeToVotesUpdates(room.id, (snapshot) => {
+        const votesData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setVotes(votesData);
+      });
+
+      // Set game state to playing
+      setGameState('playing');
+
+      return () => {
+        unsubscribeVotes();
+      };
+
+    } catch (error) {
+      console.error('Error preparing game:', error);
+      setError('Error al preparar el juego: ' + error.message);
+    }
+  };
+
   const playSong = async (song) => {
     console.log('PlaySong called with:', song);
-    
+
     if (!song) {
       console.error('No song provided to playSong');
       setError('Error: No hay canción para reproducir');
       return;
     }
-    
+
     if (!song.trackId) {
       console.error('No track ID available for song:', song);
       setError('Error: Canción sin ID de Spotify');
@@ -325,7 +385,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         hasPreviewUrl: !!song.previewUrl,
         previewUrl: song.previewUrl
       });
-      
+
       // Provide more specific error message
       if (!playerReady) {
         setError('Reproductor de Spotify no está listo. Verifica tu conexión Premium.');
@@ -344,7 +404,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
     if (playerReady && pauseTrack) {
       await pauseTrack();
     }
-    
+
     // Stop preview audio fallback
     if (audioRef.current) {
       audioRef.current.pause();
@@ -356,7 +416,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
     try {
       const { calculateScores } = await import('../lib/firestore');
       const scoreUpdates = await calculateScores(room.id, roundNumber);
-      
+
       // Update local scores
       setScores(prev => {
         const updated = { ...prev };
@@ -365,7 +425,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         });
         return updated;
       });
-      
+
     } catch (error) {
       console.error('Error calculating round results:', error);
     }
@@ -374,7 +434,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const endGame = async () => {
     stopTimer();
     stopSong();
-    
+
     try {
       const { updateGameState } = await import('../lib/firestore');
       await updateGameState(room.id, {
@@ -398,7 +458,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   useEffect(() => {
     if (roundPhase === 'voting' && votes.length > 0 && players.length > 0 && !autoAdvanceRef.current) {
       const currentRoundVotes = getVotesForCurrentRound(votes, currentRound);
-      
+
       console.log('Vote check:', {
         roundPhase,
         currentRound,
@@ -408,12 +468,12 @@ export default function GameHost({ room, players, onBackToLobby }) {
         autoAdvanceBlocked: autoAdvanceRef.current,
         votes: currentRoundVotes.map(v => ({ voter: v.voterUserId, round: v.roundNumber }))
       });
-      
+
       // Check if all players have voted for this round
       if (currentRoundVotes.length >= players.length) {
         console.log('🎯 All players have voted! Auto-advancing to next phase in 1 second...');
         autoAdvanceRef.current = true; // Prevent multiple calls
-        
+
         // Add a small delay to ensure the vote is visible before advancing
         setTimeout(() => {
           console.log('⏭️ Executing auto-advance to next phase');
@@ -421,7 +481,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         }, 1000);
       }
     }
-    
+
     // Reset the ref when round phase changes away from voting
     if (roundPhase !== 'voting') {
       autoAdvanceRef.current = false;
@@ -465,70 +525,122 @@ export default function GameHost({ room, players, onBackToLobby }) {
     );
   }
 
-  if (gameStarted) {
+  if (gameState === 'preparing' || !gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
-        <audio ref={audioRef} />
-        
-        <div className="max-w-7xl mx-auto">
-          <div className="mt-12">
-            {/* Main Display */}
-                  <div className="lg:col-span-2">
-                    <div className="h-screen rounded-lg p-8 text-center">
-                    {currentSong && (
-                      <>
-                      {roundPhase === 'preparing' && (
-                        <InitialPhase
-                          question ={"Quien ha escuchado más esta canción?"}
-                          skipToNextPhase={skipToNextPhase}
-                          textSkip={"Siguiente"}
-                        />
-                      )}
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-spotify-gray rounded-lg p-8">
+            <h2 className="text-2xl font-bold text-white mb-6">¿Listo para empezar?</h2>
 
-                      {roundPhase === 'voting' && (
-                        <GuessingPhase
-                          question={"¿Quién ha escuchado más esta canción?"}
-                          currentSong={currentSong}
-                          room = {room}
-                          skipToNextPhase={skipToNextPhase}
-                          textSkip={"Omitir"}
-                        />
-                      )}
+            <div className="space-y-4 mb-8">
+              <div className="text-white">
+                <span className="text-gray-400">Jugadores:</span> {players.length}
+              </div>
+              <div className="text-white">
+                <span className="text-gray-400">Canciones:</span> {playlist.length}
+              </div>
+              <div className="text-white">
+                <span className="text-gray-400">Tiempo por ronda:</span> {room.config.timePerRound}s
+              </div>
+              <div className="text-white">
+                <span className="text-gray-400">Auto-avance:</span>
+                <span className={`ml-2 ${room?.config?.autoStart ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {room?.config?.autoStart ? '✅ Habilitado' : '⏸️ Manual'}
+                </span>
+              </div>
+              <div className="text-white">
+                <span className="text-gray-400">Reproductor Spotify:</span>
+                <span className={`ml-2 ${playerReady ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {playerReady ? '✅ Conectado' : '⏳ Conectando...'}
+                </span>
+              </div>
+            </div>
 
-                      {roundPhase === 'results' && (
-                        <ResultsPhase
-                          question={"¿Quién ha escuchado más esta canción?"}
-                          currentSong={currentSong}
-                          room = {room}
-                          players={players}
-                          skipToNextPhase={skipToNextPhase}
-                          textSkip={"Siguiente"}
-                        />
-                      )}
-
-                      {roundPhase === 'standings' && (
-                        <StandingsPhase
-                          players={players}
-                          useMockData={false}
-                          skipToNextPhase={skipToNextPhase}
-                          textSkip={"Siguiente"}
-                        />
-                      )}
-
-                      {roundPhase === 'finished' && (
-                        <EndPhase
-                          players={players}
-                          room={room}
-                          onRestartGame={prepareGame}
-                        />
-                      )}
-                      </>
-                    )}
-                    </div>
+            <div className="flex space-x-4">
+              <button
+                onClick={startGame}
+                disabled={playlist.length === 0}
+                className="bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg"
+              >
+                ¡Empezar Juego!
+              </button>
+              <button
+                onClick={onBackToLobby}
+                className="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-6 rounded-lg"
+              >
+                Volver al Lobby
+              </button>
             </div>
           </div>
         </div>
-        
+      </div>
+    );
+  }
+
+  if (gameState === 'playing' || gameStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
+        <audio ref={audioRef} />
+
+        <div className="max-w-7xl mx-auto">
+          <div className="mt-12">
+            {/* Main Display */}
+            <div className="lg:col-span-2">
+              <div className="h-screen rounded-lg p-8 text-center">
+                {currentSong && (
+                  <>
+                    {roundPhase === 'preparing' && (
+                      <InitialPhase
+                        question={"Quien ha escuchado más esta canción?"}
+                        skipToNextPhase={skipToNextPhase}
+                        textSkip={"Siguiente"}
+                      />
+                    )}
+
+                    {roundPhase === 'voting' && (
+                      <GuessingPhase
+                        question={"¿Quién ha escuchado más esta canción?"}
+                        currentSong={currentSong}
+                        room={room}
+                        skipToNextPhase={skipToNextPhase}
+                        textSkip={"Omitir"}
+                      />
+                    )}
+
+                    {roundPhase === 'results' && (
+                      <ResultsPhase
+                        question={"¿Quién ha escuchado más esta canción?"}
+                        currentSong={currentSong}
+                        room={room}
+                        players={players}
+                        skipToNextPhase={skipToNextPhase}
+                        textSkip={"Siguiente"}
+                      />
+                    )}
+
+                    {roundPhase === 'standings' && (
+                      <StandingsPhase
+                        players={players}
+                        useMockData={false}
+                        skipToNextPhase={skipToNextPhase}
+                        textSkip={"Siguiente"}
+                      />
+                    )}
+
+                    {roundPhase === 'finished' && (
+                      <EndPhase
+                        players={players}
+                        room={room}
+                        onRestartGame={prepareGame}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Timer Progress Bar */}
         {phaseEndTime && room?.state?.phaseStartTime && room?.config?.autoStart && roundPhase !== "finished" && (
           <div className="fixed bottom-4 left-0 right-0 z-40">
@@ -540,7 +652,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
                   </div>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-spotify-green to-green-400 h-2 rounded-full transition-all duration-300 ease-in-out"
                     style={{ width: `${getTimerProgress()}%` }}
                   ></div>
@@ -553,6 +665,5 @@ export default function GameHost({ room, players, onBackToLobby }) {
     );
   }
 
-  
   return null; // This shouldn't be reached
 }
