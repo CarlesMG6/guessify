@@ -194,7 +194,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                         {animatedPlayers.map((player, index) => (
                             <div
                                 key={player.userId}
-                                className="bg-spotify-gray rounded-lg p-4 transition-all duration-1000 ease-in-out"
+                                className={`bg-spotify-gray rounded-lg p-4 ${showAnimation ? 'transition-all duration-1000 ease-in-out' : ''}`}
                                 style={{
                                     transform: `translateY(${index * 100}%)`,
                                 }}
