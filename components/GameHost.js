@@ -13,7 +13,6 @@ import EndPhase from './Phase/EndPhase';
 
 export default function GameHost({ room, players, onBackToLobby }) {
   const { user, spotifyUser } = useAuth();
-  const [gameState, setGameState] = useState('preparing'); // preparing, playing, final_results
   const [currentSong, setCurrentSong] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [votes, setVotes] = useState([]);
@@ -229,76 +228,18 @@ export default function GameHost({ room, players, onBackToLobby }) {
     setError('');
     
     try {
-      const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../lib/gameUtils');
+      const { getSongsInRoom, subscribeToVotesUpdates } = await import('../lib/firestore');
       
-      // Get the term from room configuration
-      const term = room.config?.term || 'medium_term';
-      console.log('Using term for playlist generation:', term);
+      // Get the playlist from the room (already generated when game started)
+      const roomPlaylist = await getSongsInRoom(room.id);
       
-      // Get users with Spotify data for the specified term
-      const usersForPlaylist = await getUsersForPlaylist(room.id, term);
-      
-      if (usersForPlaylist.length === 0) {
-        setError(`No hay jugadores con datos de Spotify para el período seleccionado (${term})`);
+      if (!roomPlaylist || roomPlaylist.length === 0) {
+        setError('No se encontró la playlist del juego');
         return;
       }
       
-      // Generate playlist with the specified term
-      const generatedPlaylist = generateGamePlaylist(usersForPlaylist, room.config.numSongs, term);
-      const validation = validatePlaylistForGame(generatedPlaylist);
-      
-      if (!validation.hasEnoughTracks) {
-        setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${room.config.numSongs} necesarias.`);
-        return;
-      }
-      
-      setPlaylist(validation.validTracks);
-      console.log('Playlist generada:', validation.validTracks);
-      
-    } catch (error) {
-      console.error('Error preparing game:', error);
-      setError('Error al preparar el juego: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startGame = async () => {
-    if (playlist.length === 0) {
-      setError('No hay playlist disponible');
-      return;
-    }
-    
-    console.log('Starting game with playlist:', playlist);
-    console.log('Game configuration:', {
-      autoStart: room?.config?.autoStart,
-      timePerRound: room?.config?.timePerRound,
-      numSongs: room?.config?.numSongs
-    });
-    console.log('Playlist validation:');
-    playlist.forEach((song, index) => {
-      console.log(`Song ${index}:`, {
-        trackId: song.trackId,
-        trackName: song.trackName,
-        artistName: song.artistName,
-        hasTrackId: !!song.trackId
-      });
-    });
-    
-    try {
-      const { startGame: startGameInDB, subscribeToVotesUpdates, updateGameState } = await import('../lib/firestore');
-      
-      // Start game in database
-      await startGameInDB(room.id, playlist);
-      
-      // Initialize game state
-      await updateGameState(room.id, {
-        started: true,
-        finished: false,
-        currentRound: 0,
-        currentPhase: 'preparing',
-        phaseEndTime: new Date(Date.now() + TIME_PREPARATION * 1000)
-      });
+      setPlaylist(roomPlaylist);
+      console.log('Playlist cargada:', roomPlaylist);
       
       // Subscribe to votes
       const unsubscribeVotes = await subscribeToVotesUpdates(room.id, (snapshot) => {
@@ -309,15 +250,15 @@ export default function GameHost({ room, players, onBackToLobby }) {
         setVotes(votesData);
       });
       
-      // Set game state to playing
-      setGameState('playing');
-      
       return () => {
-        unsubscribeVotes();
+        if (unsubscribeVotes) unsubscribeVotes();
       };
+      
     } catch (error) {
-      console.error('Error starting game:', error);
-      setError('Error al iniciar el juego: ' + error.message);
+      console.error('Error preparing game:', error);
+      setError('Error al preparar el juego: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -431,7 +372,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const endGame = async () => {
     stopTimer();
     stopSong();
-    setGameState('final_results');
     
     try {
       const { updateGameState } = await import('../lib/firestore');
@@ -523,87 +463,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
     );
   }
 
-  if (gameState === 'preparing' || !gameStarted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-spotify-gray rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-white mb-6">¿Listo para empezar?</h2>
-            
-            <div className="space-y-4 mb-8">
-              <div className="text-white">
-                <span className="text-gray-400">Jugadores:</span> {players.length}
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Canciones:</span> {playlist.length}
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Tiempo por ronda:</span> {room.config.timePerRound}s
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Auto-avance:</span> 
-                <span className={`ml-2 ${room?.config?.autoStart ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {room?.config?.autoStart ? '✅ Habilitado' : '⏸️ Manual'}
-                </span>
-              </div>
-              <div className="text-white">
-                <span className="text-gray-400">Reproductor Spotify:</span> 
-                <span className={`ml-2 ${playerReady ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {playerReady ? '✅ Conectado' : '⏳ Conectando...'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex space-x-4">
-              <button
-                onClick={startGame}
-                disabled={playlist.length === 0}
-                className="bg-spotify-green hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg"
-              >
-                ¡Empezar Juego!
-              </button>
-              <button
-                onClick={onBackToLobby}
-                className="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-6 rounded-lg"
-              >
-                Volver al Lobby
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /*
-  {playlist.length > 0 && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-white mb-4">Preview de Playlist</h3>
-                <div className="grid gap-2 max-h-40 overflow-y-auto">
-                  {playlist.slice(0, 5).map((song, index) => (
-                    <div key={index} className="bg-gray-700 rounded-lg p-3 flex items-center space-x-3">
-                      <img
-                        src={song.coverUrl}
-                        alt={song.trackName}
-                        className="w-10 h-10 rounded"
-                      />
-                      <div>
-                        <div className="text-white font-medium">{song.trackName}</div>
-                        <div className="text-gray-400 text-sm">{song.artistName}</div>
-                      </div>
-                    </div>
-                  ))}
-                  {playlist.length > 5 && (
-                    <div className="text-gray-400 text-center py-2">
-                      y {playlist.length - 5} canciones más...
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-  */
-
-  if (gameState === 'playing' || gameStarted) {
+  if (gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
         <audio ref={audioRef} />
@@ -664,62 +524,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
                     )}
                     </div>
             </div>
-
-{/*
-                      {roundPhase === 'points' && (
-                        <PointsPhase
-                          players={players}
-                          room = {room}
-                        />
-                      )}
-*/}
-
-            {/* Players and Votes */}
-            {/*
-            <div>
-              <div className="bg-spotify-gray rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Jugadores
-                </h3>
-                
-                <div className="space-y-3">
-                  {players.map(player => {
-                    const playerVotes = getVotesForCurrentRound(votes, currentRound).filter(
-                      vote => vote.voterUserId === player.userId
-                    );
-                    const hasVoted = playerVotes.length > 0;
-                    const playerScore = player.score || 0;
-                    
-                    return (
-                      <div
-                        key={player.userId}
-                        className="bg-gray-700 rounded-lg p-3 flex justify-between items-center"
-                      >
-                        <div>
-                          <div className="text-white font-medium">
-                            {player.nombre}
-                          </div>
-                          <div className="text-gray-400 text-sm">
-                            {playerScore} pts
-                          </div>
-                        </div>
-                        {roundPhase === 'votando' && (
-                          <div className={`px-2 py-1 rounded text-xs ${
-                            hasVoted 
-                              ? 'bg-green-900 text-green-400' 
-                              : 'bg-yellow-900 text-yellow-400'
-                          }`}>
-                            {hasVoted ? 'Votó' : 'Esperando...'}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-              </div>
-            </div>
-            */}
           </div>
         </div>
         
@@ -747,94 +551,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
     );
   }
 
-  /*
-          <div className="bg-spotify-gray rounded-lg p-6 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  Ronda {currentRound + 1} de {playlist.length}
-                </h2>
-                <div className="text-gray-400">
-                  Room: {room.codigo} | {players.length} jugadores
-                </div>
-                <div className="text-xs text-yellow-400 mt-1">
-                  DEBUG: Fase: {roundPhase} | Ronda: {currentRound + 1} | Song Index: {currentRound} | Canción: {currentSong?.trackName || 'No hay canción'}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-spotify-green">
-                  {formatTime(getTimeLeft())}
-                </div>
-                <div className="text-gray-400 capitalize">
-                  {roundPhase === 'preparing' && 'Preparando...'}
-                  {roundPhase === 'voting' && 'Votando (Escucha y vota)'}
-                  {roundPhase === 'results' && 'Resultados de la ronda'}
-                  {roundPhase === 'points' && 'Puntuaciones'}
-                  {roundPhase === 'standings' && 'Clasificación'}
-                </div>
-              </div>
-            </div>
-          </div>
-   */
-  if (gameState === 'final_results') {
-    const sortedPlayers = [...players].sort((a, b) => {
-      const scoreA = a.score || 0;
-      const scoreB = b.score || 0;
-      return scoreB - scoreA;
-    });
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-spotify-gray rounded-lg p-8 text-center">
-            <h2 className="text-3xl font-bold text-white mb-8">
-              ¡Juego Terminado!
-            </h2>
-
-            <div className="space-y-4 mb-8">
-              {sortedPlayers.map((player, index) => {
-                const playerScore = player.score || 0;
-                return (
-                  <div
-                    key={player.userId}
-                    className={`flex items-center justify-between p-4 rounded-lg ${
-                      index === 0 
-                        ? 'bg-gradient-to-r from-yellow-900 to-yellow-800 border-2 border-yellow-500' 
-                        : 'bg-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`text-2xl font-bold ${
-                        index === 0 ? 'text-yellow-400' : 'text-gray-400'
-                      }`}>
-                        #{index + 1}
-                      </div>
-                      <div className="text-white font-semibold text-lg">
-                        {player.nombre}
-                      </div>
-                    </div>
-                    <div className={`text-2xl font-bold ${
-                      index === 0 ? 'text-yellow-400' : 'text-spotify-green'
-                    }`}>
-                      {playerScore} pts
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex space-x-4 justify-center">
-              <button
-                onClick={onBackToLobby}
-                className="bg-spotify-green hover:bg-green-600 text-black font-semibold py-3 px-6 rounded-lg"
-              >
-                Volver al Lobby
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return <div>Estado no reconocido: {gameState}</div>;
+  
+  return null; // This shouldn't be reached
 }
