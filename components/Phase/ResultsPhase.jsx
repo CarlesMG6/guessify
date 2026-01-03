@@ -81,7 +81,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
             // Sort players by new score
             const sorted = [...animatedPlayers].sort((a, b) => b.newScore - a.newScore);
             setAnimatedPlayers(sorted);
-        }, 3500); // Tiempo total: 2s de espera + 3s de animación
+        }, 2500); // Tiempo total: 2s de espera + 3s de animación
 
         return () => clearTimeout(timer);
     }, [showAnimation]);
@@ -253,7 +253,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                                         {/* Points gained this round */}
                                         {player.roundPoints > 0 && (
                                             <span
-                                                className={`text-green-400 font-bold transition-all duration-[2500ms] ${
+                                                className={`text-green-400 font-bold transition-all duration-[500ms] ${
                                                     showAnimation ? 'opacity-0 translate-x-20' : 'opacity-100'
                                                 }`}
                                             >
