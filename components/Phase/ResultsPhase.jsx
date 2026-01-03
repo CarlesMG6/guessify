@@ -52,7 +52,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                 setStreakInfo(streakData);
                 setFastestPlayer(fastest);
 
-                // Initialize animated players with current order
+                // Initialize animated players with current order, sorted by previous score
                 const playersWithPoints = players.map(p => ({
                     ...p,
                     roundPoints: pointsThisRound[p.userId] || 0,
@@ -60,11 +60,11 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                     streakBonus: streakData[p.userId]?.bonus || 0,
                     previousScore: p.score - (pointsThisRound[p.userId] || 0),
                     newScore: p.score
-                }));
+                })).sort((a, b) => b.previousScore - a.previousScore);
                 setAnimatedPlayers(playersWithPoints);
 
-                // Start animation sequence
-                setTimeout(() => setShowAnimation(true), 1500); // Mostrar puntos durante 2 segundos antes de animar
+                // Start animation sequence after 2 seconds
+                setTimeout(() => setShowAnimation(true), 2000);
             } catch (error) {
                 console.error('Error loading votes:', error);
             }
@@ -77,13 +77,9 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
     useEffect(() => {
         if (!showAnimation) return;
 
-        const timer = setTimeout(() => {
-            // Sort players by new score
-            const sorted = [...animatedPlayers].sort((a, b) => b.newScore - a.newScore);
-            setAnimatedPlayers(sorted);
-        }, 2500); // Tiempo total: 2s de espera + 3s de animación
-
-        return () => clearTimeout(timer);
+        // Sort players by new score immediately when animation starts
+        const sorted = [...animatedPlayers].sort((a, b) => b.newScore - a.newScore);
+        setAnimatedPlayers(sorted);
     }, [showAnimation]);
 
     return (
