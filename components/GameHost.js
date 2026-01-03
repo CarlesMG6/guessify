@@ -600,7 +600,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
                       <EndPhase
                         players={players}
                         room={room}
-                        onRestartGame={prepareGame}
                       />
                     )}
                   </>

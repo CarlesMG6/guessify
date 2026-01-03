@@ -56,39 +56,10 @@ const EndPhase = ({ players, room, onRestartGame }) => {
         
         try {
             const { resetRoomForNewGame } = await import('../../lib/firestore');
-            const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../../lib/gameUtils');
-            const { startGame: startGameInDB } = await import('../../lib/firestore');
             
             // Reset room with same configuration
             await resetRoomForNewGame(room.id, null);
-            
-            // Generate new playlist
-            const term = room.config?.term || 'medium_term';
-            const usersForPlaylist = await getUsersForPlaylist(room.id, term);
-            
-            if (usersForPlaylist.length === 0) {
-                setError(`No hay jugadores con datos de Spotify para el período seleccionado`);
-                return;
-            }
-            
-            const numSongs = room.config?.numSongsPerUser || room.config?.numSongs || 10;
-            const generatedPlaylist = generateGamePlaylist(usersForPlaylist, numSongs, term);
-            const validation = validatePlaylistForGame(generatedPlaylist);
-            
-            if (!validation.hasEnoughTracks) {
-                setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${numSongs} necesarias.`);
-                return;
-            }
-            
-            // Save the new playlist to the room
-            await startGameInDB(room.id, validation.validTracks);
-            
-            console.log('Room reset successfully with new playlist');
-            
-            // Notify parent component
-            if (onRestartGame) {
-                onRestartGame();
-            }
+            console.log('Room reset successfully for new game');
             
         } catch (error) {
             console.error('Error restarting game:', error);
@@ -104,8 +75,6 @@ const EndPhase = ({ players, room, onRestartGame }) => {
         
         try {
             const { resetRoomForNewGame } = await import('../../lib/firestore');
-            const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../../lib/gameUtils');
-            const { startGame: startGameInDB } = await import('../../lib/firestore');
             
             // Prepare new configuration
             const newConfig = {
@@ -124,34 +93,10 @@ const EndPhase = ({ players, room, onRestartGame }) => {
             // Reset room with new configuration
             await resetRoomForNewGame(room.id, newConfig);
             
-            // Generate new playlist with new configuration
-            const usersForPlaylist = await getUsersForPlaylist(room.id, config.term);
-            
-            if (usersForPlaylist.length === 0) {
-                setError(`No hay jugadores con datos de Spotify para el período seleccionado`);
-                return;
-            }
-            
-            const generatedPlaylist = generateGamePlaylist(usersForPlaylist, config.numSongs, config.term);
-            const validation = validatePlaylistForGame(generatedPlaylist);
-            
-            if (!validation.hasEnoughTracks) {
-                setError(`No hay suficientes canciones válidas. Se encontraron ${validation.validTracks.length} de ${config.numSongs} necesarias.`);
-                return;
-            }
-            
-            // Save the new playlist to the room
-            await startGameInDB(room.id, validation.validTracks);
-            
-            console.log('Room reset successfully with new configuration and playlist');
+            console.log('Room reset successfully with new config:', newConfig);
             
             // Close modal
             setShowConfigModal(false);
-            
-            // Notify parent component
-            if (onRestartGame) {
-                onRestartGame();
-            }
             
         } catch (error) {
             console.error('Error restarting game with new config:', error);
