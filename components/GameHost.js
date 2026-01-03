@@ -211,6 +211,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
   // Load playlist and prepare game
   useEffect(() => {
+    console.log('GameHost useEffect: room or players changed', { roomId: room?.id, playersLength: players.length });
     if (room && players.length > 0 && loading) {
       prepareGame();
     }
@@ -224,6 +225,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   }, [stopTimer]);
 
   const prepareGame = async () => {
+    console.log('Preparing game for room:', room.id);
     setLoading(true);
     setError('');
     
