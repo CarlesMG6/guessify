@@ -105,6 +105,7 @@ export default function RoomPage({ params }) {
     try {
       await updateRoom(roomId, {
         'state.started': true,
+        'state.starting': true,
         'state.currentRound': 0
       // Preparar el juego: generar playlist
       // const { getUsersForPlaylist, generateGamePlaylist, validatePlaylistForGame } = await import('../../../lib/gameUtils');

@@ -29,6 +29,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const currentRound = room?.state?.currentRound || 0;
   const roundPhase = room?.state?.currentPhase || 'preparing';
   const gameStarted = room?.state?.started || false;
+  const gameStarting = room?.state?.starting || true;
   const gameFinished = room?.state?.finished || false;
   const phaseEndTime = room?.state?.phaseEndTime || null;
 
@@ -227,7 +228,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
   useEffect(() => {
     console.log('GameHost useEffect: playerReady or playlist changed', { playerReady, playlistLength: playlist.length });
-    if (playerReady && playlist.length > 0 && !gameStarted) {
+    if (playerReady && playlist.length > 0 && gameStarting) {
       console.log("Starting game with playlist:", playlist);
       startGame();
     }
@@ -304,12 +305,14 @@ export default function GameHost({ room, players, onBackToLobby }) {
       // Initialize game state
       await updateGameState(room.id, {
         started: true,
+        starting: false,
         finished: false,
         currentRound: 0,
         currentPhase: 'preparing',
         phaseEndTime: new Date(Date.now() + TIME_PREPARATION * 1000)
       });
 
+      gameStarting = false;
       // Subscribe to votes
       const unsubscribeVotes = await subscribeToVotesUpdates(room.id, (snapshot) => {
         const votesData = snapshot.docs.map(doc => ({
