@@ -194,10 +194,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                         {animatedPlayers.map((player, index) => (
                             <div
                                 key={player.userId}
-                                className={`bg-spotify-gray rounded-lg p-4 ${showAnimation ? 'transition-all duration-1000 ease-in-out delay-500' : ''}`}
-                                style={{
-                                    order: index,
-                                }}
+                                className={`bg-spotify-gray rounded-lg p-4 transition-all duration-1000 ease-in-out delay-500 order-${index}`}
                             >
                                 <div className="flex items-center justify-between">
                                     {/* Left: Position + Avatar + Name */}
