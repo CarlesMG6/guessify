@@ -253,7 +253,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
   }
 
   return (
-    <div className='flex flex-col min-h-screen'>
+    <div className='flex flex-col min-h-90vh'>
       <div className="flex flex-col flex-grow bg-gradient-to-br from-spotify-dark via-spotify-gray to-black p-6">
         {/* Header */}
         <div className="flex-row justify-between items-start w-full">
