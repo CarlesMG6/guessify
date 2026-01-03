@@ -225,6 +225,10 @@ export default function GameHost({ room, players, onBackToLobby }) {
     };
   }, [stopTimer]);
 
+  useEffect(() => {
+    startGame();
+  }, [playlist]);
+
   const prepareGame = async () => {
     console.log('Preparing game for room:', room.id);
     setLoading(true);
@@ -256,8 +260,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
 
       setPlaylist(validation.validTracks);
       console.log('Playlist generada:', validation.validTracks);
-
-      startGame();
 
     } catch (error) {
       console.error('Error in game preparation:', error);
