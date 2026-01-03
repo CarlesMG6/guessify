@@ -81,7 +81,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
             // Sort players by new score
             const sorted = [...animatedPlayers].sort((a, b) => b.newScore - a.newScore);
             setAnimatedPlayers(sorted);
-        }, 5000); // Tiempo total: 2s de espera + 3s de animación
+        }, 4500); // Tiempo total: 2s de espera + 3s de animación
 
         return () => clearTimeout(timer);
     }, [showAnimation]);
@@ -214,7 +214,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                                             <img
                                                 src={`/img/playerImages/${player.avatar}.png`}
                                                 alt={player.nombre}
-                                                className="w-10 h-10 rounded-full"
+                                                className="w-10 h-10"
                                             />
                                         ) : (
                                             <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold">
@@ -253,7 +253,7 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
                                         {/* Points gained this round */}
                                         {player.roundPoints > 0 && (
                                             <span
-                                                className={`text-green-400 font-bold transition-all duration-[3000ms] ${
+                                                className={`text-green-400 font-bold transition-all duration-[2000ms] ${
                                                     showAnimation ? 'opacity-0 translate-x-20' : 'opacity-100'
                                                 }`}
                                             >
