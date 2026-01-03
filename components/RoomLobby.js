@@ -101,11 +101,6 @@ export default function RoomLobby({ room, players, role, onStartGame, user, spot
     setShowProfileModal(true);
   };
 
-  const randomizeAvatar = () => {
-    const randomIndex = Math.floor(Math.random() * availableAvatars.length);
-    setSelectedAvatar(availableAvatars[randomIndex]);
-  };
-
   if (joining) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spotify-dark via-spotify-gray to-black flex items-center justify-center">

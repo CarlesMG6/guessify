@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { addPlayerToRoom } from '../lib/firestore';
+import { addPlayerToRoom, removePlayerFromRoom } from '../lib/firestore';
+import { IoClose } from 'react-icons/io5';
 
 export default function HostLobby({ room, players, role, onStartGame, user, spotifyUser }) {
     const [playerName, setPlayerName] = useState(spotifyUser?.nombre || '');
@@ -33,6 +34,14 @@ export default function HostLobby({ room, players, role, onStartGame, user, spot
     const copyRoomCode = () => {
         navigator.clipboard.writeText(room.id);
         // You could add a toast notification here
+    };
+
+    const handleRemovePlayer = async (userId) => {
+        try {
+            await removePlayerFromRoom(room.id, userId);
+        } catch (error) {
+            console.error('Error removing player:', error);
+        }
     };
 
     function QRCode({ url, size = 128 }) {
@@ -87,19 +96,18 @@ export default function HostLobby({ room, players, role, onStartGame, user, spot
                             Esperando jugadores...
                         </p>
                     ) : (
-                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8 mx-auto w-10/12 xl:w-full xl:max-w-6xl items-center justify-center">
+                        <div className="flex flex-wrap gap-8 mx-auto w-10/12 xl:w-full xl:max-w-6xl items-center justify-center">
                             {players.map((player, index) => (
                                 <div
                                     key={player.id}
-                                    className="flex w-fit items-center space-x-4 bg-gray-700 px-8 py-4 rounded-full"
+                                    className="flex w-fit items-center space-x-4 bg-gray-700 px-8 py-4 rounded-full relative group"
                                 >
-                                    <div className="w-16 md:w-24
-                                     flex items-center justify-center text-white font-bold text-sm mx-auto">
+                                    <div className="w-12 md:w-16 flex items-center justify-center text-white font-bold text-sm mx-auto">
                                         {player?.avatar ? (
                                             <img
                                                 src={`/img/playerImages/${player?.avatar}.png`}
                                                 alt="Tu avatar"
-                                                className="w-16 h-16 md:w-24 md:h-24 mx-auto"
+                                                className="w-12 h-12 md:w-16 md:h-16 mx-auto"
                                             />
                                         ) : (
                                             <span>{player.nombre?.[0]?.toUpperCase() || '?'}</span>
@@ -108,6 +116,13 @@ export default function HostLobby({ room, players, role, onStartGame, user, spot
                                     <div className='text-md md:text-xl'>
                                         <p className="text-white font-medium">{player.nombre}</p>
                                     </div>
+                                    <button
+                                        onClick={() => handleRemovePlayer(player.userId)}
+                                        className="ml-2 text-gray-400 hover:text-red-500 transition-colors duration-200"
+                                        title="Eliminar jugador"
+                                    >
+                                        <IoClose size={24} />
+                                    </button>
                                 </div>
                             ))}
                         </div>
