@@ -330,8 +330,8 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
               console.log("User id: ",user.uid);
               console.log("Players: ",players);
               return (
-                <div className=''>
-                  <div className="w-16 absolute bottom-4 items-center justify-center text-white font-bold text-sm">
+                <div className='flex flex-row items-start'>
+                  <div className="w-16 flex items-center justify-center text-white font-bold text-sm">
                     {player?.avatar ? (
                       <img
                         src={`/img/playerImages/${player?.avatar}.png`}
