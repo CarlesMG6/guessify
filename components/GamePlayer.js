@@ -336,7 +336,7 @@ export default function GamePlayer({ room, players, onBackToLobby }) {
                       <img
                         src={`/img/playerImages/${player?.avatar}.png`}
                         alt="Tu avatar"
-                        className="w-16 h-16 mx-auto"
+                        className="w-8 h-8 mx-auto"
                       />
                     ) : (
                       <span>{player.nombre?.[0]?.toUpperCase() || '?'}</span>
