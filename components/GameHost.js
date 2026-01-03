@@ -20,6 +20,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timerUpdate, setTimerUpdate] = useState(0); // Force timer updates
+  const [gameStarting, setGameStarting] = useState(room?.state?.starting || true);
 
   // Ref to prevent multiple auto-advances
   const autoAdvanceRef = useRef(false);
@@ -29,7 +30,6 @@ export default function GameHost({ room, players, onBackToLobby }) {
   const currentRound = room?.state?.currentRound || 0;
   const roundPhase = room?.state?.currentPhase || 'preparing';
   const gameStarted = room?.state?.started || false;
-  const gameStarting = room?.state?.starting || true;
   const gameFinished = room?.state?.finished || false;
   const phaseEndTime = room?.state?.phaseEndTime || null;
 
@@ -312,7 +312,7 @@ export default function GameHost({ room, players, onBackToLobby }) {
         phaseEndTime: new Date(Date.now() + TIME_PREPARATION * 1000)
       });
 
-      gameStarting = false;
+      setGameStarting(false);
       // Subscribe to votes
       const unsubscribeVotes = await subscribeToVotesUpdates(room.id, (snapshot) => {
         const votesData = snapshot.docs.map(doc => ({
