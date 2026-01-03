@@ -20,16 +20,6 @@ export default function RoomPage({ params }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [role, setRole] = useState('player'); // 'host' or 'player'
-
-  useEffect(() => {
-    // Get role from URL params
-    const urlParams = new URLSearchParams(window.location.search);
-    const userRole = urlParams.get('role');
-    if (userRole) {
-      setRole(userRole);
-    }
-  }, []);
 
   useEffect(() => {
     if (!user || !roomId) return;
@@ -44,11 +34,6 @@ export default function RoomPage({ params }) {
         }
 
         setRoom(roomData);
-        
-        // Set role based on host
-        if (roomData.hostUserId === user.uid) {
-          setRole('host');
-        }
         
       } catch (error) {
         console.error('Error loading room:', error);
