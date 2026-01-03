@@ -190,13 +190,13 @@ const ResultsPhase = ({ currentSong, question, room, players, skipToNextPhase, t
             <div className="flex flex-col items-center justify-center h-full w-full">
                 {/* Player Rankings with Score Animation */}
                 {animatedPlayers.length > 0 && (
-                    <div className="w-full max-w-2xl mb-6 space-y-2">
+                    <div className="w-full max-w-2xl mb-6 flex flex-col gap-2">
                         {animatedPlayers.map((player, index) => (
                             <div
                                 key={player.userId}
                                 className={`bg-spotify-gray rounded-lg p-4 ${showAnimation ? 'transition-all duration-1000 ease-in-out delay-500' : ''}`}
                                 style={{
-                                    transform: `translateY(${index * 100}%)`,
+                                    order: index,
                                 }}
                             >
                                 <div className="flex items-center justify-between">

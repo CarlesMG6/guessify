@@ -200,8 +200,8 @@ const EndPhasePlayer = ({room, players, votes, onBackToLobby }) => {
                 {/* Statistics Section */}
                 {rankedPlayers.length > 0 && (
                     <div className="w-full space-y-3">
-                        <h3 className="text-spotify-green text-xl font-bold mb-4 text-center">
-                            Puntos ganados por jugador
+                        <h3 className="text-spotify-green text-xl font-bold mb-4 text-center mt-6">
+                            ¿A quién conoces mejor?
                         </h3>
                         {rankedPlayers.map((player, index) => (
                             <div key={player.userId} className="bg-spotify-gray p-4 rounded-lg">
